@@ -26,7 +26,7 @@ export function IconInbox(props) {
 export function IconCard(props) {
   return <Icon {...props}><path {...stroke} d="M3 7h14v10H3V7zm0 3h14" /></Icon>
 }
-export function IconScrape(props) {
+export function IconImport(props) {
   return <Icon {...props}><path {...stroke} d="M4 4h12v12H4V4zm3 3h6M7 10h6M7 13h4" /></Icon>
 }
 export function IconSettings(props) {

@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { api } from '../api'
 import GlobalSearch from './GlobalSearch'
 import Eyebrow from './ui/Eyebrow'
 import {
-  IconHome, IconUsers, IconFile, IconBuilding, IconInbox, IconCard, IconScrape, IconSettings,
+  IconHome, IconUsers, IconFile, IconBuilding, IconInbox, IconCard, IconImport, IconSettings,
 } from './Icons'
 
 const NAV_BY_ROLE = {
@@ -14,7 +16,8 @@ const NAV_BY_ROLE = {
     { to: '/admin/rehab', label: 'Rehab', Icon: IconBuilding },
     { to: '/admin/claims', label: 'Claims', Icon: IconInbox, badgeKey: 'claims' },
     { to: '/admin/billing', label: 'Billing', Icon: IconCard },
-    { to: '/admin/scrape', label: 'Scrape', Icon: IconScrape },
+    { to: '/admin/import', label: 'Import', Icon: IconImport },
+    { to: '/admin/lifecycle', label: 'Lifecycle', Icon: IconSettings },
     { to: '/admin/profile', label: 'Settings', Icon: IconSettings },
   ],
   editor: [
@@ -24,11 +27,13 @@ const NAV_BY_ROLE = {
   ],
   client: [
     { to: '/client', label: 'Overview', end: true, Icon: IconHome },
-    { to: '/client/center', label: 'Center', Icon: IconBuilding },
+    { to: '/client/center', label: 'Profile', Icon: IconBuilding },
+    { to: '/client/leads', label: 'Leads', Icon: IconInbox },
+    { to: '/client/upsells', label: 'Upsells', Icon: IconFile },
     { to: '/client/landing', label: 'Landing', Icon: IconFile },
     { to: '/client/posts', label: 'Posts', Icon: IconFile },
     { to: '/client/billing', label: 'Billing', Icon: IconCard },
-    { to: '/client/profile', label: 'Settings', Icon: IconSettings },
+    { to: '/client/profile', label: 'Account', Icon: IconSettings },
   ],
 }
 
@@ -42,7 +47,22 @@ function initials(name, email) {
 export default function Shell({ children, pendingClaims = 0 }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const nav = NAV_BY_ROLE[user?.role] || []
+  const [subscriptionLocked, setSubscriptionLocked] = useState(false)
+
+  useEffect(() => {
+    if (user?.role !== 'client') {
+      setSubscriptionLocked(false)
+      return
+    }
+    api('/api/billing/subscription')
+      .then(sub => setSubscriptionLocked(!['active', 'trialing', 'past_due'].includes(sub?.status)))
+      // Preserve navigation if subscription status cannot be loaded.
+      .catch(() => setSubscriptionLocked(false))
+  }, [user?.role])
+
+  const nav = subscriptionLocked && user?.role === 'client'
+    ? NAV_BY_ROLE.client.filter(item => item.to === '/client/billing')
+    : NAV_BY_ROLE[user?.role] || []
 
   return (
     <div className="app-shell">
@@ -54,7 +74,7 @@ export default function Shell({ children, pendingClaims = 0 }) {
           type="button"
           className="avatar-btn"
           title={user?.email}
-          onClick={() => navigate(`/${user?.role}/profile`)}
+          onClick={() => navigate(subscriptionLocked ? '/client/billing' : `/${user?.role}/profile`)}
         >
           {initials(user?.display_name, user?.email)}
         </button>

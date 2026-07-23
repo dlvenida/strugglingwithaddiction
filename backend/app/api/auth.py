@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import CurrentUser
 from app.core.security import (
+    create_action_token,
     create_access_token,
     create_refresh_token,
     decode_token,
@@ -14,9 +15,21 @@ from app.core.security import (
 from app.database import get_db
 from app.models.profile import UserProfile
 from app.models.user import User, UserRole
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, RefreshRequest, RegisterClientRequest, TokenResponse
+from app.schemas.auth import (
+    ActionTokenRequest,
+    ChangePasswordRequest,
+    LoginRequest,
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    RefreshRequest,
+    RegisterClientRequest,
+    TokenResponse,
+)
+from app.config import get_settings
+from app.services.email import send_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+settings = get_settings()
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -60,6 +73,62 @@ def change_password(body: ChangePasswordRequest, user: CurrentUser, db: Annotate
     user.password_hash = hash_password(body.new_password)
     db.commit()
     return {"message": "Password updated"}
+
+
+@router.post("/request-password-reset")
+def request_password_reset(body: PasswordResetRequest, db: Annotated[Session, Depends(get_db)]):
+    """Always return the same answer to prevent account enumeration."""
+    user = db.query(User).filter(User.email == body.email.lower()).first()
+    if user:
+        token = create_action_token(user.email, "password_reset")
+        send_email(
+            db,
+            to_email=user.email,
+            template_key="password_reset",
+            context={"name": user.profile.display_name if user.profile else user.email, "reset_url": f"{settings.admin_site_url}/reset-password?token={token}"},
+            user_id=user.id,
+        )
+    return {"message": "If an account exists for that address, a reset link has been sent."}
+
+
+@router.post("/reset-password")
+def reset_password(body: PasswordResetConfirm, db: Annotated[Session, Depends(get_db)]):
+    payload = decode_token(body.token)
+    if not payload or payload.get("type") != "action" or payload.get("action") != "password_reset":
+        raise HTTPException(status_code=400, detail="Invalid or expired password-reset link")
+    user = db.query(User).filter(User.email == payload.get("sub")).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid password-reset link")
+    user.password_hash = hash_password(body.new_password)
+    db.commit()
+    return {"message": "Password updated. You can now sign in."}
+
+
+@router.post("/request-email-confirmation")
+def request_email_confirmation(user: CurrentUser, db: Annotated[Session, Depends(get_db)]):
+    token = create_action_token(user.email, "email_confirmation")
+    send_email(
+        db,
+        to_email=user.email,
+        template_key="email_confirmation",
+        context={"name": user.profile.display_name if user.profile else user.email, "confirmation_url": f"{settings.admin_site_url}/confirm-email?token={token}"},
+        user_id=user.id,
+    )
+    return {"message": "Confirmation email sent."}
+
+
+@router.post("/confirm-email")
+def confirm_email(body: ActionTokenRequest, db: Annotated[Session, Depends(get_db)]):
+    payload = decode_token(body.token)
+    if not payload or payload.get("type") != "action" or payload.get("action") != "email_confirmation":
+        raise HTTPException(status_code=400, detail="Invalid or expired confirmation link")
+    user = db.query(User).filter(User.email == payload.get("sub")).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid confirmation link")
+    from datetime import datetime, timezone
+    user.email_verified_at = datetime.now(timezone.utc)
+    db.commit()
+    return {"message": "Email confirmed."}
 
 
 @router.post("/register-client")

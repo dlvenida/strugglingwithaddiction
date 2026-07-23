@@ -53,7 +53,27 @@ def require_roles(*roles: UserRole):
     return checker
 
 
+def require_active_subscription(
+    user: Annotated[User, Depends(require_roles(UserRole.admin, UserRole.client))],
+    db: Annotated[Session, Depends(get_db)],
+) -> User:
+    """Allow client workspace features only while the base subscription is active."""
+    if user.role == UserRole.admin:
+        return user
+    from app.models.billing import Subscription
+
+    subscription = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+    # past_due remains usable while Stripe Smart Retries attempt collection.
+    if not subscription or subscription.status not in ("active", "trialing", "past_due"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your subscription is inactive. Resubscribe from Billing to restore access.",
+        )
+    return user
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]
 AdminUser = Annotated[User, Depends(require_roles(UserRole.admin))]
 EditorUser = Annotated[User, Depends(require_roles(UserRole.admin, UserRole.editor))]
 ClientUser = Annotated[User, Depends(require_roles(UserRole.admin, UserRole.client))]
+ActiveSubscriber = Annotated[User, Depends(require_active_subscription)]

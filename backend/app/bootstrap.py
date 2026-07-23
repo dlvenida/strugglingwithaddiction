@@ -144,12 +144,12 @@ def bootstrap_plans(db: Session) -> None:
     if db.query(SubscriptionPlan).first():
         return
     plan = SubscriptionPlan(
-        name="Partner Membership",
+        name="Base listing",
         stripe_price_id_monthly=settings.stripe_price_monthly or None,
         stripe_price_id_yearly=settings.stripe_price_yearly or None,
         is_active=True,
         sort_order=0,
-        features={"blog": True, "listing": True, "landing_page": True},
+        features={"blog": True, "listing": True, "landing_page": True, "price_month": "9.99", "price_year": "99"},
     )
     db.add(plan)
     db.commit()

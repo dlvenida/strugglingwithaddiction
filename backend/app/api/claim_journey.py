@@ -1,0 +1,443 @@
+"""Claim → verify → subscribe journey endpoints."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+import secrets
+from typing import Annotated
+from urllib.parse import urlparse
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy.orm import Session, joinedload
+
+from app.config import get_settings
+from app.core.security import create_action_token, hash_password, verify_password
+from app.database import get_db
+from app.models.billing import BillingInterval, Subscription
+from app.models.profile import UserProfile
+from app.models.rehab import ClaimStatus, FacilityRole, RehabCenter, RehabCenterClaim
+from app.models.user import User, UserRole
+from app.schemas.rehab import ClaimOut, ClaimStatusPublic
+from app.services.email import send_email
+from app.services.phone import send_callback_code
+from app.services.storage import get_public_url, upload_file
+from app.services.tickets import generate_claim_ticket
+
+router = APIRouter(tags=["claim-journey"])
+settings = get_settings()
+
+
+class ClaimStartRequest(BaseModel):
+    rehab_center_id: int
+    full_name: str
+    work_email: EmailStr
+    password: str = Field(min_length=8)
+    phone: str | None = None
+    job_title: str = ""
+    facility_role: FacilityRole = FacilityRole.other
+    affiliation_text: str = ""
+
+
+class ClaimStartOut(BaseModel):
+    ticket_number: str
+    status: ClaimStatus
+    center_name: str
+    message: str
+    checkout_ready: bool = False
+    user_id: int | None = None
+
+
+class CheckoutClaimRequest(BaseModel):
+    ticket_number: str
+    interval: str = "month"
+
+
+class PhoneCallbackVerifyRequest(BaseModel):
+    code: str = Field(min_length=6, max_length=6)
+
+
+def _email_domain(email: str) -> str | None:
+    parts = email.lower().split("@")
+    return parts[1] if len(parts) == 2 else None
+
+
+def _website_domain(website: str | None) -> str | None:
+    if not website:
+        return None
+    raw = website.strip()
+    if not raw.startswith(("http://", "https://")):
+        raw = "https://" + raw
+    try:
+        host = urlparse(raw).hostname or ""
+    except Exception:
+        return None
+    host = host.lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host or None
+
+
+def _domain_match(work_email: str, website: str | None) -> bool:
+    ed = _email_domain(work_email)
+    wd = _website_domain(website)
+    if not ed or not wd:
+        return False
+    return ed == wd or ed.endswith("." + wd) or wd.endswith("." + ed)
+
+
+@router.post("/api/rehab/claims/start", response_model=ClaimStartOut)
+def start_claim(body: ClaimStartRequest, db: Annotated[Session, Depends(get_db)]):
+    center = db.query(RehabCenter).filter(RehabCenter.id == body.rehab_center_id, RehabCenter.deleted_at.is_(None)).first()
+    if not center:
+        raise HTTPException(status_code=404, detail="Center not found")
+    if center.claimed and center_has_paid_access(db, center):
+        raise HTTPException(status_code=400, detail="Center already claimed")
+
+    email = body.work_email.lower()
+    user = db.query(User).filter(User.email == email).first()
+    if user and user.role != UserRole.client:
+        raise HTTPException(status_code=400, detail="Email is already registered")
+    if not user:
+        user = User(
+            email=email,
+            password_hash=hash_password(body.password),
+            role=UserRole.client,
+            is_active=False,
+        )
+        db.add(user)
+        db.flush()
+        db.add(UserProfile(user_id=user.id, display_name=body.full_name, slug=f"client-{user.id}"))
+    else:
+        # Allow restarting claim with same email; refresh password for inactive accounts
+        if not user.is_active:
+            user.password_hash = hash_password(body.password)
+
+    ticket = generate_claim_ticket(db)
+    matched = _domain_match(email, center.website)
+    claim = RehabCenterClaim(
+        ticket_number=ticket,
+        rehab_center_id=center.id,
+        submitter_user_id=user.id,
+        full_name=body.full_name,
+        job_title=body.job_title or "",
+        work_email=email,
+        phone=body.phone,
+        affiliation_text=body.affiliation_text or "",
+        facility_role=body.facility_role,
+        email_domain_matched=matched,
+        status=ClaimStatus.pending,
+    )
+    db.add(claim)
+    db.commit()
+
+    listing_url = f"{settings.public_site_url}/rehab-centers"
+    claim_url = f"{settings.public_site_url}/claim-status/{ticket}"
+    send_email(
+        db,
+        to_email=email,
+        template_key="verification",
+        context={"name": body.full_name, "center_name": center.name, "ticket": ticket, "claim_url": claim_url, "listing_url": listing_url},
+        user_id=user.id,
+        rehab_center_id=center.id,
+    )
+    send_email(
+        db,
+        to_email=email,
+        template_key="email_confirmation",
+        context={
+            "name": body.full_name,
+            "confirmation_url": f"{settings.admin_site_url}/confirm-email?token={create_action_token(email, 'email_confirmation')}",
+        },
+        user_id=user.id,
+        rehab_center_id=center.id,
+    )
+
+    return ClaimStartOut(
+        ticket_number=ticket,
+        status=ClaimStatus.pending,
+        center_name=center.name,
+        message="Account created. Upload your rehab certification to continue verification.",
+        checkout_ready=False,
+        user_id=user.id,
+    )
+
+
+@router.post("/api/rehab/claims/{ticket}/cert", response_model=ClaimStartOut)
+async def upload_claim_cert(
+    ticket: str,
+    db: Annotated[Session, Depends(get_db)],
+    file: UploadFile = File(...),
+):
+    claim = (
+        db.query(RehabCenterClaim)
+        .options(joinedload(RehabCenterClaim.center))
+        .filter(RehabCenterClaim.ticket_number == ticket.upper())
+        .first()
+    )
+    if not claim:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if claim.status in (ClaimStatus.rejected, ClaimStatus.abandoned):
+        raise HTTPException(status_code=400, detail="Claim is closed")
+
+    content = await file.read()
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
+    key = upload_file(content, file.filename or "cert.pdf", file.content_type or "application/pdf")
+    claim.business_license_url = get_public_url(key)
+    if claim.status == ClaimStatus.pending:
+        claim.status = ClaimStatus.under_review
+    db.commit()
+
+    return ClaimStartOut(
+        ticket_number=claim.ticket_number,
+        status=claim.status,
+        center_name=claim.center.name,
+        message="Certification uploaded. An admin will verify it before you can subscribe.",
+        checkout_ready=claim.status == ClaimStatus.certified,
+        user_id=claim.submitter_user_id,
+    )
+
+
+def _claim_by_ticket(ticket: str, db: Session) -> RehabCenterClaim:
+    claim = (
+        db.query(RehabCenterClaim)
+        .options(joinedload(RehabCenterClaim.center))
+        .filter(RehabCenterClaim.ticket_number == ticket.upper())
+        .first()
+    )
+    if not claim:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if claim.status in (ClaimStatus.rejected, ClaimStatus.abandoned):
+        raise HTTPException(status_code=400, detail="Claim is closed")
+    return claim
+
+
+@router.post("/api/rehab/claims/{ticket}/phone/send")
+def send_phone_callback(ticket: str, db: Annotated[Session, Depends(get_db)]):
+    claim = _claim_by_ticket(ticket, db)
+    center_phone = claim.center.phone
+    if not center_phone:
+        raise HTTPException(status_code=400, detail="This SAMHSA listing has no facility phone number for callback verification")
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    claim.phone_otp_hash = hash_password(code)
+    claim.phone_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+    send_callback_code(center_phone, code)
+    db.commit()
+    return {"message": "A confirmation code was sent to the facility phone number on this listing.", "expires_in_minutes": 15}
+
+
+@router.post("/api/rehab/claims/{ticket}/phone/verify")
+def verify_phone_callback(
+    ticket: str,
+    body: PhoneCallbackVerifyRequest,
+    db: Annotated[Session, Depends(get_db)],
+):
+    claim = _claim_by_ticket(ticket, db)
+    if not claim.phone_otp_hash or not claim.phone_otp_expires_at:
+        raise HTTPException(status_code=400, detail="Send a callback code first")
+    if claim.phone_otp_expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Confirmation code expired. Send a new code.")
+    if not verify_password(body.code, claim.phone_otp_hash):
+        raise HTTPException(status_code=400, detail="Incorrect confirmation code")
+    claim.phone_verified_at = datetime.now(timezone.utc)
+    claim.phone_otp_hash = None
+    claim.phone_otp_expires_at = None
+    db.commit()
+    return {"message": "Facility phone verified.", "phone_verified": True}
+
+
+def center_has_paid_access(db: Session, center: RehabCenter) -> bool:
+    if not center.owner_user_id:
+        return False
+    sub = db.query(Subscription).filter(Subscription.user_id == center.owner_user_id).first()
+    return bool(sub and sub.status in ("active", "trialing"))
+
+
+@router.post("/api/billing/checkout-claim")
+def checkout_claim(body: CheckoutClaimRequest, db: Annotated[Session, Depends(get_db)]):
+    import stripe
+
+    if not settings.stripe_secret_key:
+        raise HTTPException(status_code=503, detail="Stripe not configured")
+    claim = (
+        db.query(RehabCenterClaim)
+        .options(joinedload(RehabCenterClaim.center))
+        .filter(RehabCenterClaim.ticket_number == body.ticket_number.upper())
+        .first()
+    )
+    if not claim:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    if claim.status != ClaimStatus.certified:
+        raise HTTPException(status_code=400, detail="Certification must be verified before subscribe")
+    if not claim.submitter_user_id:
+        raise HTTPException(status_code=400, detail="Claim has no user account")
+
+    user = db.query(User).filter(User.id == claim.submitter_user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User missing")
+
+    stripe.api_key = settings.stripe_secret_key
+    from app.models.billing import SubscriptionPlan
+
+    sub_row = db.query(Subscription).filter(Subscription.user_id == user.id).first()
+    if not sub_row or not sub_row.stripe_customer_id:
+        customer = stripe.Customer.create(email=user.email, name=claim.full_name, metadata={"user_id": str(user.id)})
+        if not sub_row:
+            sub_row = Subscription(user_id=user.id, stripe_customer_id=customer.id, status="pending")
+            db.add(sub_row)
+        else:
+            sub_row.stripe_customer_id = customer.id
+        db.commit()
+
+    interval = BillingInterval.year if body.interval == "year" else BillingInterval.month
+    price_id = settings.stripe_price_yearly if interval == BillingInterval.year else settings.stripe_price_monthly
+    plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.is_active.is_(True)).first()
+    if plan:
+        price_id = plan.stripe_price_id_yearly if interval == BillingInterval.year else plan.stripe_price_id_monthly or price_id
+    if not price_id:
+        raise HTTPException(status_code=503, detail="Stripe price not configured")
+
+    session = stripe.checkout.Session.create(
+        customer=sub_row.stripe_customer_id,
+        mode="subscription",
+        line_items=[{"price": price_id, "quantity": 1}],
+        success_url=f"{settings.admin_site_url}/client/billing?success=1",
+        cancel_url=f"{settings.public_site_url}/claim-status/{claim.ticket_number}?canceled=1",
+        metadata={
+            "user_id": str(user.id),
+            "claim_ticket": claim.ticket_number,
+            "rehab_center_id": str(claim.rehab_center_id),
+        },
+        subscription_data={"metadata": {"user_id": str(user.id), "claim_ticket": claim.ticket_number}},
+    )
+    sub_row.plan_id = plan.id if plan else None
+    sub_row.interval = interval
+    db.commit()
+    return {"checkout_url": session.url}
+
+
+@router.get("/api/rehab/claims/{ticket}/detail", response_model=ClaimStatusPublic)
+def claim_status_detail(ticket: str, db: Annotated[Session, Depends(get_db)]):
+    claim = (
+        db.query(RehabCenterClaim)
+        .options(joinedload(RehabCenterClaim.center))
+        .filter(RehabCenterClaim.ticket_number == ticket.upper())
+        .first()
+    )
+    if not claim:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    messages = {
+        ClaimStatus.pending: "Upload your rehab certification to continue.",
+        ClaimStatus.under_review: "Certification is under review.",
+        ClaimStatus.certified: "Verified — choose a plan to claim your listing.",
+        ClaimStatus.approved: "Claimed and active. Log in to manage your listing.",
+        ClaimStatus.rejected: "Your claim was not approved.",
+        ClaimStatus.abandoned: "This claim expired. Start again from the listing page.",
+    }
+    return ClaimStatusPublic(
+        ticket_number=claim.ticket_number,
+        status=claim.status,
+        center_name=claim.center.name,
+        submitted_at=claim.created_at,
+        reviewed_at=claim.reviewed_at,
+        message=messages.get(claim.status, ""),
+        certification_uploaded=bool(claim.business_license_url),
+        email_domain_matched=bool(claim.email_domain_matched),
+        phone_verified=bool(claim.phone_verified_at),
+    )
+
+
+def grant_claim_on_payment(db: Session, *, user_id: int, claim_ticket: str | None = None, rehab_center_id: int | None = None) -> None:
+    """Called from Stripe webhook — unlocks listing after payment."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        return
+    user.is_active = True
+    claim = None
+    if claim_ticket:
+        claim = db.query(RehabCenterClaim).filter(RehabCenterClaim.ticket_number == claim_ticket.upper()).first()
+    if not claim:
+        claim = (
+            db.query(RehabCenterClaim)
+            .filter(RehabCenterClaim.submitter_user_id == user_id)
+            .order_by(RehabCenterClaim.created_at.desc())
+            .first()
+        )
+    center = None
+    if claim:
+        claim.status = ClaimStatus.approved
+        claim.reviewed_at = datetime.now(timezone.utc)
+        center = db.query(RehabCenter).filter(RehabCenter.id == claim.rehab_center_id).first()
+    elif rehab_center_id:
+        center = db.query(RehabCenter).filter(RehabCenter.id == rehab_center_id).first()
+    else:
+        center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == user_id).first()
+
+    if center:
+        newly_claimed = not center.claimed
+        center.claimed = True
+        center.contact_visible = True
+        center.owner_user_id = user_id
+        if claim and claim.cert_verified_at:
+            center.cert_verified_at = claim.cert_verified_at
+        if newly_claimed:
+            send_email(
+                db,
+                to_email=user.email,
+                template_key="welcome",
+                context={
+                    "name": claim.full_name if claim else user.email,
+                    "center_name": center.name,
+                    "login_url": f"{settings.admin_site_url}/login",
+                    "billing_url": f"{settings.admin_site_url}/client/billing",
+                    "receipt_url": f"{settings.admin_site_url}/client/billing",
+                },
+                user_id=user.id,
+                rehab_center_id=center.id,
+            )
+
+
+def downgrade_center_after_cancel(db: Session, user_id: int, *, send_winback: bool = True) -> None:
+    center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == user_id).first()
+    user = db.query(User).filter(User.id == user_id).first()
+    if not center:
+        return
+    center.contact_visible = False
+    # Keep owner link but publicly treat as basic (claim CTA returns via helpers)
+    center.claimed = False
+    center.verified_badge = False
+    center.featured_until = None
+    if user and send_winback:
+        send_email(
+            db,
+            to_email=user.email,
+            template_key="win_back",
+            context={
+                "name": user.email,
+                "center_name": center.name,
+                "billing_url": f"{settings.admin_site_url}/client/billing",
+            },
+            user_id=user.id,
+            rehab_center_id=center.id,
+        )
+
+
+def schedule_abandon_reminder(db: Session, claim: RehabCenterClaim) -> None:
+    """Mark claims older than 24h without cert for reminder (called by cron-ish endpoint)."""
+    if claim.reminder_sent_at or claim.business_license_url:
+        return
+    if claim.created_at and claim.created_at > datetime.now(timezone.utc) - timedelta(hours=24):
+        return
+    send_email(
+        db,
+        to_email=claim.work_email,
+        template_key="claim_abandon_reminder",
+        context={
+            "name": claim.full_name,
+            "center_name": claim.center.name if claim.center else "your center",
+            "claim_url": f"{settings.public_site_url}/claim-status/{claim.ticket_number}",
+        },
+        user_id=claim.submitter_user_id,
+        rehab_center_id=claim.rehab_center_id,
+    )
+    claim.reminder_sent_at = datetime.now(timezone.utc)

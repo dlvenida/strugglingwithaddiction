@@ -16,6 +16,9 @@ import './App.css'
 const Blog = lazy(() => import('./pages/Blog'))
 const BlogPost = lazy(() => import('./pages/BlogPost'))
 const RehabCenters = lazy(() => import('./pages/RehabCenters'))
+const RehabCenterDetail = lazy(() => import('./pages/RehabCenterDetail'))
+const RehabLocationIndex = lazy(() => import('./pages/RehabLocationIndex'))
+const Unsubscribe = lazy(() => import('./pages/Unsubscribe'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsOfUse = lazy(() => import('./pages/TermsOfUse'))
 const Accessibility = lazy(() => import('./pages/Accessibility'))
@@ -39,7 +42,11 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/rehab-centers" element={<RehabCenters />} />
+          <Route path="/rehab-centers/state/:state/city/:city" element={<RehabLocationIndex />} />
+          <Route path="/rehab-centers/state/:state" element={<RehabLocationIndex />} />
+          <Route path="/rehab-centers/:slug" element={<RehabCenterDetail />} />
           <Route path="/claim-status/:ticket" element={<ClaimStatus />} />
+          <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/partners/:slug" element={<PartnerPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />

@@ -13,7 +13,8 @@ import AdminRehab from './pages/admin/Rehab'
 import RehabEditor from './pages/admin/rehab/RehabEditor'
 import AdminClaims from './pages/admin/Claims'
 import AdminBilling from './pages/admin/Billing'
-import AdminScrape from './pages/admin/Scrape'
+import AdminImport from './pages/admin/Import'
+import AdminLifecycle from './pages/admin/Lifecycle'
 import EditorDashboard from './pages/editor/Dashboard'
 import EditorPosts from './pages/editor/Posts'
 import ClientDashboard from './pages/client/Dashboard'
@@ -21,6 +22,10 @@ import ClientBilling from './pages/client/Billing'
 import ClientLanding from './pages/client/Landing'
 import ClientPosts from './pages/client/Posts'
 import ClientMyCenter from './pages/client/MyCenter'
+import ClientLeads from './pages/client/Leads'
+import ClientUpsells from './pages/client/Upsells'
+import PasswordRecovery from './pages/PasswordRecovery'
+import ConfirmEmail from './pages/ConfirmEmail'
 
 function HomeRedirect() {
   const { user, loading } = useAuth()
@@ -36,6 +41,8 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/reset-password" element={<PasswordRecovery />} />
+      <Route path="/confirm-email" element={<ConfirmEmail />} />
       <Route path="/" element={<HomeRedirect />} />
 
       <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
@@ -48,7 +55,8 @@ export default function App() {
       <Route path="/admin/rehab/:id/edit" element={<ProtectedRoute roles={['admin']}><AdminLayout><RehabEditor /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/claims" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminClaims /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/billing" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminBilling /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/scrape" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminScrape /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/import" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminImport /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/lifecycle" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminLifecycle /></AdminLayout></ProtectedRoute>} />
       <Route path="/admin/profile" element={<ProtectedRoute roles={['admin']}><AdminLayout><ProfilePage /></AdminLayout></ProtectedRoute>} />
 
       <Route path="/editor" element={<ProtectedRoute roles={['editor', 'admin']}><EditorLayout><EditorDashboard /></EditorLayout></ProtectedRoute>} />
@@ -62,6 +70,8 @@ export default function App() {
       <Route path="/client/landing" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientLanding /></ClientLayout></ProtectedRoute>} />
       <Route path="/client/posts" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientPosts /></ClientLayout></ProtectedRoute>} />
       <Route path="/client/center" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientMyCenter /></ClientLayout></ProtectedRoute>} />
+      <Route path="/client/leads" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientLeads /></ClientLayout></ProtectedRoute>} />
+      <Route path="/client/upsells" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientUpsells /></ClientLayout></ProtectedRoute>} />
       <Route path="/client/profile" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ProfilePage /></ClientLayout></ProtectedRoute>} />
     </Routes>
   )

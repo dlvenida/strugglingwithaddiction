@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models.rehab import ClaimStatus, FacilityRole, ListingStatus, CenterSource, ScrapeJobStatus
+from app.models.rehab import ClaimStatus, FacilityRole, ListingStatus, CenterSource
 
 
 class RehabCenterPublic(BaseModel):
@@ -17,6 +17,17 @@ class RehabCenterPublic(BaseModel):
     description: str
     rating: float
     claimed: bool
+    verified_badge: bool = False
+    featured: bool = False
+    # Premium fields only when claimed+subscribed
+    insurances: list[str] = Field(default_factory=list)
+    levels_of_care: list[str] = Field(default_factory=list)
+    amenities: list[str] = Field(default_factory=list)
+    accreditations: list[str] = Field(default_factory=list)
+    google_maps_url: str | None = None
+    contact_email: str | None = None
+    gallery_urls: list[str] = Field(default_factory=list)
+    video_url: str | None = None
 
 
 class RehabCenterAdmin(BaseModel):
@@ -31,12 +42,27 @@ class RehabCenterAdmin(BaseModel):
     zip: str | None
     phone: str | None
     website: str | None
+    contact_email: str | None = None
+    outreach_email: str | None = None
+    samhsa_id: str | None = None
+    google_maps_url: str | None = None
+    google_reviews_url: str | None = None
+    video_url: str | None = None
     image_key: str | None
     image_url: str | None = None
+    gallery_keys: list | None = None
     rating: float
     specialties: list[str]
+    insurances: list[str] | None = None
+    levels_of_care: list[str] | None = None
+    amenities: list[str] | None = None
+    accreditations: list[str] | None = None
+    testimonials: list | None = None
     claimed: bool
     contact_visible: bool
+    cert_verified_at: datetime | None = None
+    verified_badge: bool = False
+    featured_until: datetime | None = None
     listing_status: ListingStatus
     owner_user_id: int | None
     source: CenterSource
@@ -114,6 +140,9 @@ class ClaimStatusPublic(BaseModel):
     submitted_at: datetime
     reviewed_at: datetime | None
     message: str
+    certification_uploaded: bool = False
+    email_domain_matched: bool = False
+    phone_verified: bool = False
 
 
 class ClaimAdmin(BaseModel):
@@ -128,6 +157,10 @@ class ClaimAdmin(BaseModel):
     phone: str | None
     affiliation_text: str
     facility_role: FacilityRole
+    business_license_url: str | None = None
+    proof_of_affiliation_url: str | None = None
+    email_domain_matched: bool = False
+    cert_verified_at: datetime | None = None
     admin_notes: str | None
     created_at: datetime
     reviewed_at: datetime | None
@@ -155,71 +188,3 @@ class ClaimReview(BaseModel):
     admin_notes: str | None = None
     create_client_user: bool = False
     client_password: str | None = Field(default=None, min_length=8)
-
-
-class ScrapeResultItem(BaseModel):
-    name: str
-    address: str = ""
-    rating: float | None = None
-    services: list[str] = Field(default_factory=list)
-    phone: str | None = None
-    description: str = ""
-    website: str | None = None
-    source_url: str | None = None
-    state: str | None = None
-
-
-class ScrapeRequest(BaseModel):
-    state: str
-    query: str | None = None
-    url: str | None = None
-    offset: int = Field(default=0, ge=0)
-
-
-class ScrapeJobOut(BaseModel):
-    id: int
-    status: ScrapeJobStatus
-    query_or_url: str
-    state: str | None = None
-    results_count: int
-    results: list[ScrapeResultItem] = Field(default_factory=list)
-    error_log: str | None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
-class ScrapeSettingsOut(BaseModel):
-    openai_api_key_set: bool = False
-    kimi_api_key_set: bool = False
-    claude_api_key_set: bool = False
-    gemini_api_key_set: bool = False
-    openai_api_key_masked: str | None = None
-    kimi_api_key_masked: str | None = None
-    claude_api_key_masked: str | None = None
-    gemini_api_key_masked: str | None = None
-    preferred_provider: str | None = None
-
-
-class ScrapeSettingsUpdate(BaseModel):
-    openai_api_key: str | None = None
-    kimi_api_key: str | None = None
-    claude_api_key: str | None = None
-    gemini_api_key: str | None = None
-    preferred_provider: str | None = None
-
-
-class ScrapeSavedOut(BaseModel):
-    id: int
-    name: str
-    address: str
-    rating: float | None
-    services: list[str]
-    phone: str | None
-    description: str
-    website: str | None
-    source_url: str | None
-    state: str | None
-    created_at: datetime
-
-    model_config = {"from_attributes": True}

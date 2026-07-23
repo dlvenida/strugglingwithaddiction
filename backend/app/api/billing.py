@@ -37,6 +37,30 @@ def _user_subscription(db: Session, user_id: int) -> Subscription | None:
     return db.query(Subscription).filter(Subscription.user_id == user_id).first()
 
 
+def _stripe_timestamp(value) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromtimestamp(int(value), tz=timezone.utc)
+    except (TypeError, ValueError, OSError):
+        return None
+
+
+def _sync_subscription_from_stripe(sub_row: Subscription, payload, *, fallback_active: bool = False) -> None:
+    """Map Stripe's subscription shape onto the local subscription row."""
+    if not payload:
+        if fallback_active:
+            sub_row.status = "active"
+        return
+    sub_row.stripe_subscription_id = payload.get("id") or sub_row.stripe_subscription_id
+    # Checkout Sessions report status="complete", which is not a subscription status.
+    status_value = payload.get("status")
+    sub_row.status = status_value if status_value in ("active", "trialing", "past_due", "unpaid", "canceled", "paused") else (
+        "active" if fallback_active else sub_row.status
+    )
+    sub_row.current_period_end = _stripe_timestamp(payload.get("current_period_end")) or sub_row.current_period_end
+
+
 def _subscription_out(db: Session, user: User) -> SubscriptionOut:
     sub = _user_subscription(db, user.id)
     if not sub:
@@ -154,28 +178,148 @@ async def stripe_webhook(request: Request, db: Annotated[Session, Depends(get_db
         event = stripe.Webhook.construct_event(payload, sig, settings.stripe_webhook_secret)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid signature")
-    if event["type"] in ("checkout.session.completed", "customer.subscription.updated", "customer.subscription.created"):
-        data = event["data"]["object"]
+
+    from app.api.claim_journey import downgrade_center_after_cancel, grant_claim_on_payment
+    from app.models.upsell import UpsellOrder, UpsellOrderStatus, UpsellProductType
+    from app.services.email import send_email
+
+    etype = event["type"]
+    data = event["data"]["object"]
+
+    if etype in ("checkout.session.completed", "customer.subscription.updated", "customer.subscription.created"):
         user_id = None
-        if "metadata" in data and data["metadata"].get("user_id"):
-            user_id = int(data["metadata"]["user_id"])
+        meta = data.get("metadata") or {}
+        if meta.get("user_id"):
+            user_id = int(meta["user_id"])
         customer_id = data.get("customer")
         sub_row = None
         if user_id:
             sub_row = _user_subscription(db, user_id)
         elif customer_id:
             sub_row = db.query(Subscription).filter(Subscription.stripe_customer_id == customer_id).first()
-        if sub_row:
-            user = db.query(User).filter(User.id == sub_row.user_id).first()
+            if sub_row:
+                user_id = sub_row.user_id
+        if sub_row and user_id:
+            user = db.query(User).filter(User.id == user_id).first()
             if user:
                 user.is_active = True
-            sub_row.status = "active"
-            if event["type"] != "checkout.session.completed":
-                sub_row.stripe_subscription_id = data.get("id") or sub_row.stripe_subscription_id
-                sub_row.status = data.get("status", sub_row.status)
+            if etype == "checkout.session.completed":
+                subscription_payload = None
+                subscription_id = data.get("subscription")
+                if subscription_id:
+                    try:
+                        subscription_payload = st.Subscription.retrieve(subscription_id)
+                    except Exception:
+                        # Payment succeeded; Stripe will also deliver a subscription event.
+                        subscription_payload = None
+                _sync_subscription_from_stripe(sub_row, subscription_payload, fallback_active=True)
+            else:
+                _sync_subscription_from_stripe(sub_row, data)
+
+            # Stripe keeps this subscription active through its paid period.
+            # The deletion webhook below performs the actual downgrade.
+            if etype == "customer.subscription.updated" and data.get("cancel_at_period_end") and user:
+                center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == user_id).first()
+                if center:
+                    access_end = (
+                        sub_row.current_period_end.strftime("%b %-d, %Y")
+                        if sub_row.current_period_end
+                        else "the end of your paid period"
+                    )
+                    send_email(
+                        db,
+                        to_email=user.email,
+                        template_key="cancellation",
+                        context={
+                            "name": user.email,
+                            "center_name": center.name,
+                            "access_end": access_end,
+                            "billing_url": f"{settings.admin_site_url}/client/billing",
+                        },
+                        user_id=user.id,
+                        rehab_center_id=center.id,
+                    )
+
+            # Stripe has exhausted Smart Retries; follow the same downgrade path
+            # as a completed cancellation.
+            if etype == "customer.subscription.updated" and sub_row.status == "unpaid":
+                center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == user_id).first()
+                if center and center.claimed:
+                    downgrade_center_after_cancel(db, user_id, send_winback=True)
+
+            # Upsell one-time / placement checkout
+            if meta.get("upsell_order_id"):
+                order = db.query(UpsellOrder).filter(UpsellOrder.id == int(meta["upsell_order_id"])).first()
+                if order:
+                    order.status = UpsellOrderStatus.paid
+                    center = db.query(RehabCenter).filter(RehabCenter.id == order.rehab_center_id).first()
+                    if center and order.product_type == UpsellProductType.verified_badge:
+                        center.verified_badge = True
+                    if center and order.product_type == UpsellProductType.featured_placement:
+                        from datetime import timedelta, timezone as tz
+                        from datetime import datetime as dt
+                        center.featured_until = dt.now(tz.utc) + timedelta(days=30)
+            elif etype == "checkout.session.completed":
+                grant_claim_on_payment(
+                    db,
+                    user_id=user_id,
+                    claim_ticket=meta.get("claim_ticket"),
+                    rehab_center_id=int(meta["rehab_center_id"]) if meta.get("rehab_center_id") else None,
+                )
+                if user:
+                    send_email(
+                        db,
+                        to_email=user.email,
+                        template_key="payment_receipt",
+                        context={"name": user.email, "center_name": "your listing", "amount": "$9.99", "receipt_url": f"{settings.admin_site_url}/client/billing", "billing_url": f"{settings.admin_site_url}/client/billing"},
+                        user_id=user.id,
+                    )
+
+    elif etype == "invoice.payment_failed":
+        customer_id = data.get("customer")
+        sub_row = db.query(Subscription).filter(Subscription.stripe_customer_id == customer_id).first() if customer_id else None
+        if sub_row:
+            user = db.query(User).filter(User.id == sub_row.user_id).first()
             center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == sub_row.user_id).first()
-            if center:
-                center.contact_visible = True
+            if user:
+                send_email(
+                    db,
+                    to_email=user.email,
+                    template_key="dunning",
+                    context={
+                        "name": user.email,
+                        "center_name": center.name if center else "your listing",
+                        "billing_url": f"{settings.admin_site_url}/client/billing",
+                    },
+                    user_id=user.id,
+                    rehab_center_id=center.id if center else None,
+                )
+
+    elif etype in ("customer.subscription.deleted", "customer.subscription.paused"):
+        customer_id = data.get("customer")
+        sub_row = db.query(Subscription).filter(Subscription.stripe_customer_id == customer_id).first() if customer_id else None
+        if sub_row:
+            sub_row.status = "canceled" if etype.endswith("deleted") else "paused"
+            user = db.query(User).filter(User.id == sub_row.user_id).first()
+            center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == sub_row.user_id).first()
+            if user and center:
+                send_email(
+                    db,
+                    to_email=user.email,
+                    template_key="cancellation",
+                    context={
+                        "name": user.email,
+                        "center_name": center.name,
+                        "access_end": "the end of your paid period",
+                        "billing_url": f"{settings.admin_site_url}/client/billing",
+                    },
+                    user_id=user.id,
+                    rehab_center_id=center.id,
+                )
+            # Grace: Stripe keeps access until period end; on deleted, downgrade now
+            if etype == "customer.subscription.deleted":
+                downgrade_center_after_cancel(db, sub_row.user_id, send_winback=True)
+
     db.commit()
     return {"received": True}
 

@@ -4,9 +4,9 @@ import Eyebrow from '../../components/ui/Eyebrow'
 import Card from '../../components/ui/Card'
 
 const LINKS = [
-  { to: '/client/landing', label: 'Landing page' },
-  { to: '/client/posts', label: 'Posts' },
   { to: '/client/center', label: 'Center profile' },
+  { to: '/client/leads', label: 'Leads' },
+  { to: '/client/upsells', label: 'Upgrades' },
   { to: '/client/billing', label: 'Billing' },
 ]
 
@@ -19,7 +19,7 @@ export default function ClientDashboard() {
       <section className="page-header-block">
         <Eyebrow>Partner</Eyebrow>
         <h1 className="hero-title">Welcome, {name}.</h1>
-        <p className="hero-lead">Manage your listing, landing page, and subscription.</p>
+        <p className="hero-lead">Manage your listing, leads, and grow your visibility.</p>
       </section>
       <div className="link-grid">
         {LINKS.map(l => (

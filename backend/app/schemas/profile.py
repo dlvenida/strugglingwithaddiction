@@ -21,6 +21,7 @@ class ProfileUpdate(BaseModel):
     zip: str | None = None
     country: str | None = None
     social_links: SocialLinks | None = None
+    notification_preferences: dict[str, bool] | None = None
 
 
 class ProfileOut(BaseModel):
@@ -36,6 +37,7 @@ class ProfileOut(BaseModel):
     country: str | None
     profile_photo_url: str | None = None
     social_links: dict | None = None
+    notification_preferences: dict | None = None
     email: str | None = None
     role: str | None = None
 

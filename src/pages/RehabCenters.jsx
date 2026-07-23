@@ -66,35 +66,108 @@ const STATIC_CENTERS = [
   },
 ]
 
+// NOTE: Backend endpoints used:
+// POST /api/rehab/claims/start - start claim with account info
+// POST /api/rehab/claims/{ticket}/cert - upload certification file
+// GET /api/rehab/claims/{ticket} - check claim status
+// POST /api/billing/checkout-claim - checkout when certified (body: { ticket_number, interval })
+
 function ClaimModal({ center, onClose }) {
-  const [submitted, setSubmitted] = useState(false)
+  const [step, setStep] = useState(1) // 1=account, 2=confirm, 3=cert, 4=status
   const [ticket, setTicket] = useState('')
+  const [claimStatus, setClaimStatus] = useState('')
+  const [centerName, setCenterName] = useState('')
+  const [checkoutReady, setCheckoutReady] = useState(false)
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
   const [form, setForm] = useState({
     full_name: '',
-    job_title: '',
     work_email: '',
+    password: '',
     phone: '',
-    affiliation_text: '',
+    job_title: '',
     facility_role: 'other',
+    affiliation_text: '',
   })
 
-  const handleSubmit = async e => {
+  const handleAccountSubmit = async e => {
     e.preventDefault()
+    setError('')
+    setCenterName(center.name)
+    setStep(2)
+  }
+
+  const handleConfirmFacility = async () => {
     setError('')
     if (apiEnabled()) {
       try {
-        const res = await fetchApi('/api/rehab/claims', {
+        const res = await fetchApi('/api/rehab/claims/start', {
           method: 'POST',
-          body: JSON.stringify({ rehab_center_id: center.id, ...form }),
+          body: JSON.stringify({
+            rehab_center_id: center.id,
+            full_name: form.full_name,
+            work_email: form.work_email,
+            password: form.password,
+            phone: form.phone,
+            job_title: form.job_title,
+            facility_role: form.facility_role,
+            affiliation_text: form.affiliation_text,
+          }),
         })
         setTicket(res.ticket_number)
-        setSubmitted(true)
+        setClaimStatus(res.status)
+        setCenterName(res.center_name || center.name)
+        setCheckoutReady(res.checkout_ready || false)
+        setStep(3)
       } catch (err) {
         setError(err.message)
       }
     } else {
-      setSubmitted(true)
+      setTicket('DEMO-TICKET')
+      setCenterName(center.name)
+      setStep(3)
+    }
+  }
+
+  const handleCertUpload = async e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError('')
+    setUploading(true)
+    if (apiEnabled()) {
+      try {
+        const formData = new FormData()
+        formData.append('file', file)
+        const r = await fetch(`/api/rehab/claims/${ticket}/cert`, { method: 'POST', body: formData })
+        const res = await r.json().catch(() => ({}))
+        if (!r.ok) throw new Error(res.detail || 'Upload failed')
+        setClaimStatus(res.status || 'under_review')
+        setCheckoutReady(res.checkout_ready || false)
+        setStep(4)
+      } catch (err) {
+        setError(err.message || 'Upload failed')
+      }
+    } else {
+      setTimeout(() => {
+        setClaimStatus('certified')
+        setCheckoutReady(true)
+        setStep(4)
+      }, 800)
+    }
+    setUploading(false)
+  }
+
+  const goToCheckout = async interval => {
+    if (apiEnabled()) {
+      try {
+        const res = await fetchApi('/api/billing/checkout-claim', {
+          method: 'POST',
+          body: JSON.stringify({ ticket_number: ticket, interval }),
+        })
+        window.location.href = res.checkout_url
+      } catch (err) {
+        setError(err.message)
+      }
     }
   }
 
@@ -102,51 +175,86 @@ function ClaimModal({ center, onClose }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
-        {submitted ? (
-          <div className="modal-success">
-            <div className="modal-success-icon">✓</div>
-            <h3>Request Received!</h3>
-            {ticket ? (
-              <>
-                <p>Your ticket number: <strong>{ticket}</strong></p>
-                <p><Link to={`/claim-status/${ticket}`}>Track your claim status →</Link></p>
-              </>
-            ) : (
-              <p>Thank you for claiming <strong>{center.name}</strong>. Our team will review your request.</p>
-            )}
-            <button className="btn" onClick={onClose}>Close</button>
-          </div>
-        ) : (
+
+        {step === 1 && (
           <>
             <div className="modal-header">
-              <span className="section-label">Claim This Listing</span>
-              <h3>{center.name}</h3>
-              <p>Fill out the form below and our team will verify your ownership.</p>
+              <span className="section-label">Step 1 of 3</span>
+              <h3>Create Your Account</h3>
+              <p>Set up your credentials to manage <strong>{center.name}</strong>.</p>
             </div>
             {error && <p style={{ color: '#8c1126', marginBottom: '0.5rem' }}>{error}</p>}
-            <form className="modal-form" onSubmit={handleSubmit}>
-              <div className="form-row">
-                <label>Your Name<input type="text" required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></label>
-                <label>Job Title<input type="text" required value={form.job_title} onChange={e => setForm(f => ({ ...f, job_title: e.target.value }))} /></label>
-              </div>
+            <form className="modal-form" onSubmit={handleAccountSubmit}>
+              <label>Full Name<input type="text" required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></label>
               <label>Work Email<input type="email" required value={form.work_email} onChange={e => setForm(f => ({ ...f, work_email: e.target.value }))} /></label>
-              <label>Phone Number<input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></label>
-              <label>Your role
-                <select value={form.facility_role} onChange={e => setForm(f => ({ ...f, facility_role: e.target.value }))}>
-                  <option value="owner">Owner</option>
-                  <option value="director">Director</option>
-                  <option value="marketing">Marketing</option>
-                  <option value="staff">Staff</option>
-                  <option value="other">Other</option>
-                </select>
-              </label>
-              <label>
-                How are you affiliated with this center?
-                <textarea rows="3" required value={form.affiliation_text} onChange={e => setForm(f => ({ ...f, affiliation_text: e.target.value }))} />
-              </label>
-              <button type="submit" className="btn">Submit Claim Request</button>
+              <label>Password<input type="password" required minLength="8" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} /></label>
+              <label>Phone<input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></label>
+              <button type="submit" className="btn">Continue</button>
             </form>
           </>
+        )}
+
+        {step === 2 && (
+          <>
+            <div className="modal-header">
+              <span className="section-label">Step 2 of 3</span>
+              <h3>Confirm Your Facility</h3>
+              <p>You are claiming:</p>
+            </div>
+            <div style={{ background: '#f9fafb', padding: '1.25rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #e5e7eb' }}>
+              <h4 style={{ fontSize: '1.1rem', color: '#1a1a2e', margin: '0 0 0.25rem' }}>{centerName}</h4>
+              <p style={{ fontSize: '0.88rem', color: '#6b7280', margin: 0 }}>{center.location}</p>
+            </div>
+            <div className="modal-form">
+              {error && <p style={{ color: '#8c1126', marginBottom: '0.5rem' }}>{error}</p>}
+              <button type="button" className="btn" onClick={handleConfirmFacility}>Yes, This Is Correct</button>
+              <button type="button" className="btn" style={{ background: '#f3f4f6', color: '#374151' }} onClick={() => setStep(1)}>Back</button>
+            </div>
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+            <div className="modal-header">
+              <span className="section-label">Step 3 of 3</span>
+              <h3>Upload Certification</h3>
+              <p>Provide proof you work at this facility (employment verification, business card, license, etc.)</p>
+            </div>
+            {error && <p style={{ color: '#8c1126', marginBottom: '0.5rem' }}>{error}</p>}
+            <div className="modal-form">
+              <label style={{ cursor: 'pointer', border: '2px dashed #98b8c4', borderRadius: '8px', padding: '2rem', textAlign: 'center', background: '#fafaf8', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = '#f0f4f5'} onMouseOut={e => e.currentTarget.style.background = '#fafaf8'}>
+                {uploading ? 'Uploading…' : 'Choose File to Upload'}
+                <input type="file" accept="image/*,.pdf" onChange={handleCertUpload} style={{ display: 'none' }} disabled={uploading} />
+              </label>
+              <button type="button" className="btn" style={{ background: '#e5e7eb', color: '#6b7280' }} onClick={() => setStep(2)}>Back</button>
+            </div>
+          </>
+        )}
+
+        {step === 4 && (
+          <div className="modal-success">
+            <div className="modal-success-icon">✓</div>
+            <h3>Claim Submitted!</h3>
+            <p style={{ marginBottom: '1rem' }}>Ticket: <strong>{ticket}</strong></p>
+            <p style={{ marginBottom: '1.5rem' }}><Link to={`/claim-status/${ticket}`}>Track your claim status →</Link></p>
+
+            {checkoutReady && claimStatus === 'certified' && (
+              <div style={{ background: '#f0f9ff', border: '1px solid #98b8c4', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+                <h4 style={{ fontSize: '1rem', margin: '0 0 0.5rem', color: '#1a1a2e' }}>🎉 Your certification is approved!</h4>
+                <p style={{ fontSize: '0.9rem', color: '#4b5563', marginBottom: '1rem' }}>Subscribe now to publish your listing and start receiving leads.</p>
+                <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column' }}>
+                  <button type="button" className="btn" onClick={() => goToCheckout('year')} style={{ fontSize: '0.9rem' }}>
+                    <strong>$99/year</strong> <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', opacity: 0.85 }}>(Save 2 months!)</span>
+                  </button>
+                  <button type="button" className="btn" onClick={() => goToCheckout('month')} style={{ background: 'white', color: '#1a1a2e', border: '2px solid #e5e7eb', fontSize: '0.9rem' }}>
+                    $9.99/month
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button className="btn" style={{ background: '#e5e7eb', color: '#374151' }} onClick={onClose}>Close</button>
+          </div>
         )}
       </div>
     </div>
@@ -174,8 +282,77 @@ function filterCenters(centers, { query, state, service }) {
   })
 }
 
+// NOTE: Backend endpoint used for leads:
+// POST /api/rehab-centers/{slug}/leads body: { full_name, email, phone?, message, source_url? }
+
+function LeadFormModal({ center, onClose }) {
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
+  const [form, setForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    message: '',
+  })
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    setError('')
+    if (apiEnabled()) {
+      try {
+        const slug = center.slug || center.id
+        await fetchApi(`/api/rehab-centers/${slug}/leads`, {
+          method: 'POST',
+          body: JSON.stringify({
+            ...form,
+            source_url: window.location.href,
+          }),
+        })
+        setSubmitted(true)
+      } catch (err) {
+        setError(err.message)
+      }
+    } else {
+      setSubmitted(true)
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
+        {submitted ? (
+          <div className="modal-success">
+            <div className="modal-success-icon">✓</div>
+            <h3>Inquiry Sent!</h3>
+            <p>Thank you for your interest in <strong>{center.name}</strong>. They will reach out to you soon.</p>
+            <button className="btn" onClick={onClose}>Close</button>
+          </div>
+        ) : (
+          <>
+            <div className="modal-header">
+              <span className="section-label">Contact Center</span>
+              <h3>{center.name}</h3>
+              <p>Fill out the form below and they will respond to your inquiry.</p>
+            </div>
+            {error && <p style={{ color: '#8c1126', marginBottom: '0.5rem' }}>{error}</p>}
+            <form className="modal-form" onSubmit={handleSubmit}>
+              <label>Your Name<input type="text" required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></label>
+              <label>Email<input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></label>
+              <label>Phone<input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></label>
+              <label>Message<textarea rows="4" required value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="Tell us about yourself and what you're looking for..." /></label>
+              <button type="submit" className="btn">Send Inquiry</button>
+            </form>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function RehabCenters() {
   const [claimCenter, setClaimCenter] = useState(null)
+  const [leadCenter, setLeadCenter] = useState(null)
   const [centers, setCenters] = useState(STATIC_CENTERS)
   const [loading, setLoading] = useState(apiEnabled())
   const [query, setQuery] = useState('')
@@ -264,7 +441,7 @@ export default function RehabCenters() {
                 <div className="rehab-card-top">
                   <div>
                     <div className="rehab-name-row">
-                      <h2>{center.name}</h2>
+                      <h2>{center.slug ? <Link to={`/rehab-centers/${center.slug}`}>{center.name}</Link> : center.name}</h2>
                       {center.claimed && <span className="rehab-claimed-badge">✓ Claimed</span>}
                     </div>
                     <div className="rehab-card-meta">
@@ -298,6 +475,7 @@ export default function RehabCenters() {
                       {center.website && (
                         <a href={center.website} target="_blank" rel="noopener noreferrer" className="rehab-contact"><FaGlobe aria-hidden="true" /> Visit Website</a>
                       )}
+                      <button type="button" className="btn" style={{ marginLeft: 'auto', padding: '0.6rem 1.5rem', fontSize: '0.82rem' }} onClick={() => setLeadCenter(center)}>Send Inquiry</button>
                       <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="btn rehab-call-btn">Call Now</a>
                     </>
                   ) : (
@@ -324,6 +502,7 @@ export default function RehabCenters() {
       </section>
 
       {claimCenter && <ClaimModal center={claimCenter} onClose={() => setClaimCenter(null)} />}
+      {leadCenter && <LeadFormModal center={leadCenter} onClose={() => setLeadCenter(null)} />}
     </main>
   )
 }

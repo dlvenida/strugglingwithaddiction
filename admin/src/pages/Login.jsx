@@ -60,7 +60,7 @@ export default function Login() {
           <code>pj@redbear.tv</code> with the import password from your deploy docs.
         </p>
         <p className="muted" style={{ marginTop: 20, textAlign: 'center' }}>
-          <Link to="/register">Partner registration</Link>
+          <Link to="/register">Partner registration</Link> · <Link to="/reset-password">Forgot password?</Link>
         </p>
       </Card>
       <footer className="studio-footer studio-footer-auth">Developed by RedbearTV Dev Team</footer>

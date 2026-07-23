@@ -10,11 +10,7 @@ from app.models.rehab import (
     FacilityRole,
     ListingStatus,
     CenterSource,
-    ScrapeJob,
-    ScrapeJobStatus,
 )
-from app.models.scrape_settings import ScrapeSettings
-from app.models.scrape_saved import ScrapeSavedItem
 from app.models.client_portal import ClientLandingPage, ClientPost, ClientPostStatus
 from app.models.billing import (
     BillingInterval,
@@ -22,6 +18,9 @@ from app.models.billing import (
     Subscription,
     SubscriptionPlan,
 )
+from app.models.lead import CenterLead
+from app.models.upsell import UpsellOrder, UpsellProductType, UpsellFulfillment, UpsellOrderStatus
+from app.models.email_log import EmailLog
 
 __all__ = [
     "Base",
@@ -40,10 +39,6 @@ __all__ = [
     "FacilityRole",
     "ListingStatus",
     "CenterSource",
-    "ScrapeJob",
-    "ScrapeJobStatus",
-    "ScrapeSettings",
-    "ScrapeSavedItem",
     "SubscriptionPlan",
     "Subscription",
     "BillingInterval",
@@ -51,4 +46,10 @@ __all__ = [
     "ClientLandingPage",
     "ClientPost",
     "ClientPostStatus",
+    "CenterLead",
+    "UpsellOrder",
+    "UpsellProductType",
+    "UpsellFulfillment",
+    "UpsellOrderStatus",
+    "EmailLog",
 ]
