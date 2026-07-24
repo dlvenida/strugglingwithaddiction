@@ -21,10 +21,73 @@ from app.models.upsell import UpsellFulfillment, UpsellOrder, UpsellOrderStatus,
 from app.models.user import User
 from app.schemas.rehab import RehabCenterAdmin
 from app.services.email import send_email
-from app.services.storage import get_public_url, upload_file
+from app.services.storage import get_public_url, resolve_image_url, upload_file
 
 router = APIRouter(tags=["leads-upsells"])
 settings = get_settings()
+
+
+def _slugify_segment(value: str | None) -> str:
+    import re
+
+    text = re.sub(r"[^a-z0-9]+", "-", str(value or "").lower().strip())
+    return text.strip("-")
+
+
+def _public_listing_path(center: RehabCenter) -> str | None:
+    state = center.state or (center.location_display or "").split(",")[-1].strip()
+    city = center.city or (center.location_display or "").split(",")[0].strip()
+    if not state or not city or not center.name:
+        return None
+    return (
+        f"/rehabs/united-states/{_slugify_segment(state)}/"
+        f"{_slugify_segment(city)}/{_slugify_segment(center.name)}"
+    )
+
+
+def _public_listing_url(center: RehabCenter) -> str | None:
+    path = _public_listing_path(center)
+    if not path:
+        return None
+    return f"{settings.public_site_url.rstrip('/')}{path}"
+
+
+def _featured_active(center: RehabCenter) -> bool:
+    return bool(center.featured_until and center.featured_until > datetime.now(timezone.utc))
+
+
+def _upsell_status_for_center(db: Session, center: RehabCenter | None, product_type: UpsellProductType) -> dict:
+    if not center:
+        return {"owned": False, "status": "available", "order_status": None}
+    orders = (
+        db.query(UpsellOrder)
+        .filter(
+            UpsellOrder.rehab_center_id == center.id,
+            UpsellOrder.product_type == product_type,
+        )
+        .order_by(UpsellOrder.created_at.desc())
+        .all()
+    )
+    latest = orders[0] if orders else None
+    if product_type == UpsellProductType.verified_badge and center.verified_badge:
+        return {"owned": True, "status": "active", "order_status": latest.status.value if latest else "fulfilled"}
+    if product_type == UpsellProductType.featured_placement and _featured_active(center):
+        return {
+            "owned": True,
+            "status": "active",
+            "order_status": latest.status.value if latest else "fulfilled",
+            "featured_until": center.featured_until.isoformat() if center.featured_until else None,
+        }
+    if latest and latest.status in (UpsellOrderStatus.paid, UpsellOrderStatus.fulfilled):
+        if product_type in (UpsellProductType.featured_article, UpsellProductType.article_aeo):
+            return {
+                "owned": latest.status == UpsellOrderStatus.fulfilled,
+                "status": "fulfilled" if latest.status == UpsellOrderStatus.fulfilled else "in_progress",
+                "order_status": latest.status.value,
+            }
+    if latest and latest.status == UpsellOrderStatus.pending:
+        return {"owned": False, "status": "pending", "order_status": "pending"}
+    return {"owned": False, "status": "available", "order_status": latest.status.value if latest else None}
 
 UPSELL_CATALOG = [
     {
@@ -186,6 +249,7 @@ def submit_lead(slug: str, body: LeadCreate, db: Annotated[Session, Depends(get_
                 "source_url": lead.source_url or "",
                 "inbox_url": f"{settings.admin_site_url}/client/leads",
             },
+            user_id=center.owner_user_id,
             rehab_center_id=center.id,
         )
 
@@ -331,6 +395,24 @@ def update_my_center(body: ClientCenterUpdate, user: ClientUser, db: Annotated[S
     return out
 
 
+@router.post("/api/client/my-center/hero")
+async def upload_center_hero_image(
+    user: ActiveSubscriber,
+    db: Annotated[Session, Depends(get_db)],
+    file: UploadFile = File(...),
+):
+    if file.content_type and not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Hero uploads must be images")
+    content = await file.read()
+    if not content or len(content) > 8 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Hero image must be between 1 byte and 8MB")
+    center = _require_active_client_center(db, user)
+    key = upload_file(content, file.filename or "hero.jpg", file.content_type or "image/jpeg")
+    center.image_key = key
+    db.commit()
+    return {"image_key": key, "image_url": resolve_image_url(key)}
+
+
 @router.post("/api/client/my-center/gallery")
 async def upload_center_gallery_image(
     user: ActiveSubscriber,
@@ -349,8 +431,15 @@ async def upload_center_gallery_image(
     key = upload_file(content, file.filename or "gallery.jpg", file.content_type or "image/jpeg")
     keys.append(key)
     center.gallery_keys = keys
+    if not center.image_key:
+        center.image_key = key
     db.commit()
-    return {"gallery_keys": keys, "gallery_urls": [get_public_url(k) for k in keys]}
+    return {
+        "gallery_keys": keys,
+        "gallery_urls": [get_public_url(k) for k in keys],
+        "image_key": center.image_key,
+        "image_url": resolve_image_url(center.image_key),
+    }
 
 
 @router.delete("/api/client/my-center/gallery/{index}")
@@ -376,24 +465,45 @@ def get_my_center_enriched(user: ClientUser, db: Annotated[Session, Depends(get_
     out["subscription_status"] = sub.status if sub else "inactive"
     out["dashboard_locked"] = not (sub and sub.status in ("active", "trialing", "past_due"))
     out["gallery_urls"] = [get_public_url(k) for k in (center.gallery_keys or [])]
+    out["image_url"] = resolve_image_url(center.image_key)
+    out["public_listing_path"] = _public_listing_path(center)
+    out["public_listing_url"] = _public_listing_url(center)
+    out["verified_badge"] = bool(center.verified_badge)
+    out["featured_active"] = _featured_active(center)
+    out["featured_until"] = center.featured_until.isoformat() if center.featured_until else None
     return out
 
 
 @router.get("/api/client/upsells")
 def list_upsells(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
     center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == user.id).first()
-    return {
-        "center_id": center.id if center else None,
-        "products": [
+    products = []
+    for p in UPSELL_CATALOG:
+        status = _upsell_status_for_center(db, center, p["product_type"])
+        products.append(
             {
                 "product_type": p["product_type"].value,
                 "label": p["label"],
                 "price_label": p["price_label"],
                 "fulfillment": p["fulfillment"].value,
                 "description": p["description"],
+                **status,
+                "preview": {
+                    "verified_badge": p["product_type"] == UpsellProductType.verified_badge,
+                    "featured_placement": p["product_type"] == UpsellProductType.featured_placement,
+                    "article": p["product_type"]
+                    in (UpsellProductType.featured_article, UpsellProductType.article_aeo),
+                },
             }
-            for p in UPSELL_CATALOG
-        ],
+        )
+    return {
+        "center_id": center.id if center else None,
+        "center_name": center.name if center else None,
+        "public_listing_url": _public_listing_url(center) if center else None,
+        "public_listing_path": _public_listing_path(center) if center else None,
+        "verified_badge": bool(center.verified_badge) if center else False,
+        "featured_active": _featured_active(center) if center else False,
+        "products": products,
     }
 
 
@@ -501,7 +611,68 @@ def admin_upsell_orders(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
             "amount_cents": o.amount_cents,
             "user_id": o.user_id,
             "rehab_center_id": o.rehab_center_id,
+            "center_name": o.center.name if o.center else None,
             "created_at": o.created_at,
         }
         for o in orders
     ]
+
+
+@router.patch("/api/admin/upsell-orders/{order_id}")
+def admin_update_upsell_order(
+    order_id: int,
+    _: AdminUser,
+    db: Annotated[Session, Depends(get_db)],
+    status: str | None = None,
+):
+    order = db.query(UpsellOrder).filter(UpsellOrder.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Upsell order not found")
+    if status:
+        try:
+            order.status = UpsellOrderStatus(status)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="Invalid status") from exc
+        if order.status == UpsellOrderStatus.fulfilled:
+            order.fulfilled_at = datetime.now(timezone.utc)
+            user = db.query(User).filter(User.id == order.user_id).first()
+            center = db.query(RehabCenter).filter(RehabCenter.id == order.rehab_center_id).first()
+            if user:
+                send_email(
+                    db,
+                    to_email=user.email,
+                    template_key="upsell_fulfilled",
+                    context={
+                        "name": user.email,
+                        "center_name": center.name if center else "your listing",
+                        "product_label": order.product_type.value.replace("_", " ").title(),
+                        "listing_url": _public_listing_url(center) if center else settings.public_site_url,
+                        "login_url": f"{settings.admin_site_url}/login",
+                    },
+                    user_id=user.id,
+                    rehab_center_id=order.rehab_center_id,
+                )
+    db.commit()
+    return {"id": order.id, "status": order.status.value}
+
+
+@router.get("/api/admin/leads")
+def admin_list_leads(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
+    leads = db.query(CenterLead).order_by(CenterLead.created_at.desc()).limit(300).all()
+    return [
+        {
+            "id": lead.id,
+            "full_name": lead.full_name,
+            "email": lead.email,
+            "phone": lead.phone,
+            "message": lead.message,
+            "source_url": lead.source_url,
+            "created_at": lead.created_at,
+            "read_at": lead.read_at,
+            "rehab_center_id": lead.rehab_center_id,
+            "center_name": lead.center.name if lead.center else None,
+        }
+        for lead in leads
+    ]
+
+

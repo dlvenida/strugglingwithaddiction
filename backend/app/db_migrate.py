@@ -66,6 +66,58 @@ def run_migrations(engine: Engine) -> None:
             except Exception:
                 pass
 
+    # Ensure analytics / insurance tables exist even if create_all raced
+    with engine.begin() as conn:
+        conn.execute(text(
+            """
+            CREATE TABLE IF NOT EXISTS insurance_catalog (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(120) NOT NULL UNIQUE,
+                slug VARCHAR(120) NOT NULL UNIQUE,
+                logo_path VARCHAR(512) NOT NULL,
+                enabled BOOLEAN NOT NULL DEFAULT TRUE,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMPTZ DEFAULT NOW(),
+                updated_at TIMESTAMPTZ DEFAULT NOW()
+            )
+            """
+        ))
+        conn.execute(text(
+            """
+            CREATE TABLE IF NOT EXISTS center_page_views (
+                id SERIAL PRIMARY KEY,
+                rehab_center_id INTEGER NOT NULL REFERENCES rehab_centers(id) ON DELETE CASCADE,
+                visited_at TIMESTAMPTZ DEFAULT NOW(),
+                visitor_state VARCHAR(64),
+                device_type VARCHAR(32) NOT NULL DEFAULT 'desktop',
+                path VARCHAR(512),
+                referrer VARCHAR(512),
+                session_key VARCHAR(64)
+            )
+            """
+        ))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_center_page_views_center ON center_page_views (rehab_center_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_center_page_views_visited ON center_page_views (visited_at)"))
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            """
+            CREATE TABLE IF NOT EXISTS site_page_views (
+                id SERIAL PRIMARY KEY,
+                visited_at TIMESTAMPTZ DEFAULT NOW(),
+                path VARCHAR(512) NOT NULL,
+                page_title VARCHAR(255),
+                referrer VARCHAR(512),
+                visitor_state VARCHAR(64),
+                device_type VARCHAR(32) NOT NULL DEFAULT 'desktop',
+                session_key VARCHAR(64)
+            )
+            """
+        ))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_site_page_views_visited ON site_page_views (visited_at)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_site_page_views_path ON site_page_views (path)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_site_page_views_session ON site_page_views (session_key)"))
+
     if "user_profiles" in insp.get_table_names():
         cols = {c["name"] for c in insp.get_columns("user_profiles")}
         if "notification_preferences" not in cols:

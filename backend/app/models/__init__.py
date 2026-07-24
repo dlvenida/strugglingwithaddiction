@@ -21,6 +21,10 @@ from app.models.billing import (
 from app.models.lead import CenterLead
 from app.models.upsell import UpsellOrder, UpsellProductType, UpsellFulfillment, UpsellOrderStatus
 from app.models.email_log import EmailLog
+from app.models.email_template import EmailTemplateOverride
+from app.models.platform_settings import PlatformEmailSettings
+from app.models.insurance import InsuranceCatalog
+from app.models.analytics import CenterPageView, SitePageView
 
 __all__ = [
     "Base",
@@ -52,4 +56,9 @@ __all__ = [
     "UpsellFulfillment",
     "UpsellOrderStatus",
     "EmailLog",
+    "EmailTemplateOverride",
+    "PlatformEmailSettings",
+    "InsuranceCatalog",
+    "CenterPageView",
+    "SitePageView",
 ]

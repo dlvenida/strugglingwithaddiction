@@ -3,38 +3,92 @@ import { Link } from 'react-router-dom'
 import { FaMapMarkerAlt, FaPhone, FaGlobe, FaStar, FaSearch } from 'react-icons/fa'
 import { fetchApi, apiEnabled } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
+import { rehabLandingPath } from '../lib/rehabLanding'
 import RehabSearch from '../components/RehabSearch'
 import './RehabCenters.css'
 
-const STATIC_CENTERS = [
+export const STATIC_CENTERS = [
   {
     id: 1,
     name: 'Hazelden Betty Ford Foundation',
     location: 'Rancho Mirage, California',
+    city: 'Rancho Mirage',
+    state: 'California',
+    address_line: '39000 Bob Hope Drive',
+    zip: '92270',
     phone: '1-866-831-5700',
     website: 'https://www.hazeldenbettyford.org',
     image: '/images/rehab/hazelden-betty-ford.webp',
+    gallery_urls: ['/images/rehab/hazelden-betty-ford.webp', '/images/rehab/caron-treatment-centers.webp', '/images/rehab/sierra-tucson.webp'],
     specialties: ['Inpatient Residential', 'Medical Detox', 'Dual Diagnosis', 'Telehealth'],
+    levels_of_care: ['Detox', 'Residential', 'PHP', 'IOP', 'Outpatient'],
+    amenities: ['Private Rooms Available', 'Family Program', 'Yoga & Meditation'],
+    insurances: ['Aetna', 'Blue Cross Blue Shield', 'Cigna', 'UnitedHealthcare', 'Anthem', 'Optum'],
+    insurance_details: [
+      { name: 'Aetna', slug: 'aetna', logo_url: '/images/insurance/aetna.png' },
+      { name: 'Blue Cross Blue Shield', slug: 'blue-cross-blue-shield', logo_url: '/images/insurance/blue-cross-blue-shield.png' },
+      { name: 'Cigna', slug: 'cigna', logo_url: '/images/insurance/cigna.png' },
+      { name: 'UnitedHealthcare', slug: 'unitedhealthcare', logo_url: '/images/insurance/unitedhealthcare.png' },
+      { name: 'Anthem', slug: 'anthem', logo_url: '/images/insurance/anthem.png' },
+      { name: 'Optum', slug: 'optum', logo_url: '/images/insurance/optum.png' },
+    ],
+    accreditations: ['Joint Commission', 'CARF'],
+    testimonials: [
+      { author: 'Former patient', quote: 'The staff treated me with dignity and gave me a clear path forward.', rating: 5 },
+      { author: 'Family member', quote: 'We finally felt hope. Communication was clear from day one.', rating: 5 },
+      { author: 'Alumni', quote: 'Compassionate care that helped our family rebuild.', rating: 5 },
+      { author: 'Parent', quote: 'Aftercare support made the transition home feel possible.', rating: 4 },
+    ],
+    google_maps_url: 'https://maps.google.com/?q=Hazelden+Betty+Ford+Rancho+Mirage',
+    google_reviews_url: 'https://www.google.com/maps/search/?api=1&query=Hazelden+Betty+Ford+Rancho+Mirage',
     description: 'The Betty Ford Center is a world-renowned inpatient addiction treatment facility co-founded in 1982 by former First Lady Betty Ford.',
     rating: 5,
+    verified_badge: true,
+    featured: true,
     claimed: true,
   },
   {
     id: 2,
     name: 'Caron Treatment Centers',
     location: 'Wernersville, Pennsylvania',
+    city: 'Wernersville',
+    state: 'Pennsylvania',
+    address_line: '243 N Galen Hall Road',
+    zip: '19565',
     phone: '1-800-854-6023',
     website: 'https://www.caron.org',
     image: '/images/rehab/caron-treatment-centers.webp',
+    gallery_urls: ['/images/rehab/caron-treatment-centers.webp', '/images/rehab/hazelden-betty-ford.webp', '/images/rehab/the-ranch-tennessee.webp'],
     specialties: ['Medical Detox', 'Inpatient', 'Dual Diagnosis', 'Executive Program'],
+    levels_of_care: ['Detox', 'Residential', 'Extended Care', 'Outpatient'],
+    amenities: ['Executive Track', 'Family Support', 'Fitness Program'],
+    insurances: ['Aetna', 'Cigna', 'UnitedHealthcare', 'Tricare'],
+    insurance_details: [
+      { name: 'Aetna', slug: 'aetna', logo_url: '/images/insurance/aetna.png' },
+      { name: 'Cigna', slug: 'cigna', logo_url: '/images/insurance/cigna.png' },
+      { name: 'UnitedHealthcare', slug: 'unitedhealthcare', logo_url: '/images/insurance/unitedhealthcare.png' },
+      { name: 'Tricare', slug: 'tricare', logo_url: '/images/insurance/tricare.png' },
+    ],
+    accreditations: ['Joint Commission', 'LegitScript'],
+    testimonials: [
+      { author: 'Alumni', quote: 'Caron gave me structure, community, and tools I still use every day.', rating: 5 },
+      { author: 'Parent', quote: 'The clinical team was honest, skilled, and deeply caring.', rating: 5 },
+      { author: 'Alumni', quote: 'A structured program with real medical depth.', rating: 5 },
+      { author: 'Spouse', quote: 'The family workshops helped us repair what addiction broke.', rating: 4 },
+    ],
+    google_maps_url: 'https://maps.google.com/?q=Caron+Treatment+Centers+Wernersville',
+    google_reviews_url: 'https://www.google.com/maps/search/?api=1&query=Caron+Treatment+Centers+Wernersville',
     description: 'Caron is a nationally recognized nonprofit provider of comprehensive addiction and behavioral health treatment.',
     rating: 5,
+    verified_badge: true,
     claimed: true,
   },
   {
     id: 3,
     name: 'Sierra Tucson',
     location: 'Tucson, Arizona',
+    city: 'Tucson',
+    state: 'Arizona',
     phone: '(844) 276-1469',
     website: 'https://www.sierratucson.com',
     image: '/images/rehab/sierra-tucson.webp',
@@ -46,6 +100,8 @@ const STATIC_CENTERS = [
     id: 4,
     name: 'The Ranch Tennessee',
     location: 'Nunnelly, Tennessee',
+    city: 'Nunnelly',
+    state: 'Tennessee',
     phone: '(931) 416-1559',
     website: 'https://www.theranch.com',
     image: '/images/rehab/the-ranch-tennessee.webp',
@@ -57,6 +113,8 @@ const STATIC_CENTERS = [
     id: 5,
     name: 'McLean Hospital',
     location: 'Belmont, Massachusetts',
+    city: 'Belmont',
+    state: 'Massachusetts',
     phone: '617-855-2000',
     website: 'https://www.mcleanhospital.org',
     image: '/images/rehab/mclean-hospital.webp',
@@ -261,20 +319,31 @@ function ClaimModal({ center, onClose }) {
   )
 }
 
-function filterCenters(centers, { query, state, service }) {
+function filterCenters(centers, { query, state, service, insurance }) {
   const q = normalizeText(query)
+  const insuranceNeedle = normalizeText(insurance)
   return centers.filter(center => {
     if (state) {
       const centerState = extractStateFromLocation(center.location)
       if (!centerState || normalizeText(centerState) !== normalizeText(state)) return false
     }
     if (service && !centerMatchesService(center.specialties, service)) return false
+    if (insuranceNeedle) {
+      const names = [
+        ...(center.insurances || []),
+        ...((center.insurance_details || []).map(d => d.name)),
+      ]
+      if (!names.some(name => normalizeText(name).includes(insuranceNeedle) || insuranceNeedle.includes(normalizeText(name)))) {
+        return false
+      }
+    }
     if (q) {
       const blob = normalizeText([
         center.name,
         center.location,
         center.description,
         ...(center.specialties || []),
+        ...(center.insurances || []),
       ].join(' '))
       if (!blob.includes(q)) return false
     }
@@ -358,27 +427,47 @@ export default function RehabCenters() {
   const [query, setQuery] = useState('')
   const [stateFilter, setStateFilter] = useState('')
   const [serviceFilter, setServiceFilter] = useState('')
+  const [insuranceFilter, setInsuranceFilter] = useState('')
+  const [insuranceOptions, setInsuranceOptions] = useState([])
 
   useEffect(() => {
     if (!apiEnabled()) return
-    fetchApi('/api/rehab-centers')
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 2500)
+    fetchApi('/api/rehab-centers', { signal: controller.signal })
       .then(data => {
         if (data?.length) setCenters(data)
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => {
+        clearTimeout(timeout)
+        setLoading(false)
+      })
+    fetchApi('/api/insurances').then(data => {
+      if (Array.isArray(data)) setInsuranceOptions(data)
+    }).catch(() => {})
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [])
 
-  const hasActiveFilters = Boolean(query || stateFilter || serviceFilter)
+  const hasActiveFilters = Boolean(query || stateFilter || serviceFilter || insuranceFilter)
   const filteredCenters = useMemo(
-    () => filterCenters(centers, { query, state: stateFilter, service: serviceFilter }),
-    [centers, query, stateFilter, serviceFilter],
+    () => filterCenters(centers, {
+      query,
+      state: stateFilter,
+      service: serviceFilter,
+      insurance: insuranceFilter,
+    }),
+    [centers, query, stateFilter, serviceFilter, insuranceFilter],
   )
 
   function clearFilters() {
     setQuery('')
     setStateFilter('')
     setServiceFilter('')
+    setInsuranceFilter('')
   }
 
   return (
@@ -400,6 +489,9 @@ export default function RehabCenters() {
           onStateChange={setStateFilter}
           service={serviceFilter}
           onServiceChange={setServiceFilter}
+          insurance={insuranceFilter}
+          onInsuranceChange={setInsuranceFilter}
+          insuranceOptions={insuranceOptions}
           resultCount={filteredCenters.length}
           totalCount={centers.length}
           onClear={clearFilters}
@@ -415,7 +507,7 @@ export default function RehabCenters() {
             ) : hasActiveFilters ? (
               <>Refine your search above or browse all <strong>{centers.length} centers</strong>.</>
             ) : (
-              <>Are you a treatment provider? <strong>Claim your listing</strong> to update your information.</>
+              <>Are you a treatment provider? <Link to="/provider">Log in to the provider platform</Link> or <strong>claim your listing</strong> below.</>
             )}
           </p>
         </div>
@@ -432,16 +524,23 @@ export default function RehabCenters() {
               <button type="button" className="btn" onClick={clearFilters}>Clear all filters</button>
             </div>
           )}
-          {!loading && filteredCenters.map(center => (
+          {!loading && filteredCenters.map(center => {
+            const landingPath = center.claimed ? rehabLandingPath(center) : null
+            return (
             <article className="rehab-card" key={center.id}>
               <div className="rehab-card-img-wrap">
-                {center.image && <img src={center.image} alt={center.name} loading="lazy" />}
+                {center.image && (landingPath
+                  ? <Link to={landingPath} aria-label={`View ${center.name} landing page`}><img src={center.image} alt={center.name} loading="lazy" /></Link>
+                  : <img src={center.image} alt={center.name} loading="lazy" />
+                )}
               </div>
               <div className="rehab-card-body">
                 <div className="rehab-card-top">
                   <div>
                     <div className="rehab-name-row">
-                      <h2>{center.slug ? <Link to={`/rehab-centers/${center.slug}`}>{center.name}</Link> : center.name}</h2>
+                      <h2>{landingPath ? <Link to={landingPath}>{center.name}</Link> : center.name}</h2>
+                      {center.featured && <span className="rehab-featured-badge">Featured</span>}
+                      {center.verified_badge && <span className="rehab-verified-badge">Verified</span>}
                       {center.claimed && <span className="rehab-claimed-badge">✓ Claimed</span>}
                     </div>
                     <div className="rehab-card-meta">
@@ -471,12 +570,17 @@ export default function RehabCenters() {
                 <div className="rehab-card-footer">
                   {center.claimed && center.phone ? (
                     <>
-                      <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="rehab-contact"><FaPhone aria-hidden="true" /> {center.phone}</a>
-                      {center.website && (
-                        <a href={center.website} target="_blank" rel="noopener noreferrer" className="rehab-contact"><FaGlobe aria-hidden="true" /> Visit Website</a>
-                      )}
-                      <button type="button" className="btn" style={{ marginLeft: 'auto', padding: '0.6rem 1.5rem', fontSize: '0.82rem' }} onClick={() => setLeadCenter(center)}>Send Inquiry</button>
-                      <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="btn rehab-call-btn">Call Now</a>
+                      <div className="rehab-card-contacts">
+                        <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="rehab-contact"><FaPhone aria-hidden="true" /> {center.phone}</a>
+                        {center.website && (
+                          <a href={center.website} target="_blank" rel="noopener noreferrer" className="rehab-contact"><FaGlobe aria-hidden="true" /> Visit Website</a>
+                        )}
+                      </div>
+                      <div className="rehab-card-actions">
+                        <button type="button" className="btn rehab-action-btn" onClick={() => setLeadCenter(center)}>Send Inquiry</button>
+                        {landingPath && <Link to={landingPath} className="btn rehab-action-btn rehab-action-btn--primary">View</Link>}
+                        <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="btn rehab-action-btn">Call Now</a>
+                      </div>
                     </>
                   ) : (
                     <p className="rehab-unclaimed-notice"><FaPhone aria-hidden="true" /> Contact info available after claiming this listing.</p>
@@ -484,7 +588,8 @@ export default function RehabCenters() {
                 </div>
               </div>
             </article>
-          ))}
+            )
+          })}
         </div>
       </section>
 
@@ -496,6 +601,7 @@ export default function RehabCenters() {
           </div>
           <div className="rehab-cta-btns">
             <button className="btn btn-white" onClick={() => setClaimCenter(centers[0])}>Submit Your Center</button>
+            <Link to="/provider" className="btn btn-white-outline">Provider Login</Link>
             <a href="tel:18005551234" className="btn btn-white-outline">Call Our Team</a>
           </div>
         </div>

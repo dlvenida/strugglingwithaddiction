@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { apiEnabled, fetchApi } from '../lib/api'
+import { rehabLandingPath } from '../lib/rehabLanding'
 
 export default function RehabLocationIndex() {
   const { state, city } = useParams()
@@ -16,8 +17,8 @@ export default function RehabLocationIndex() {
     <h1>Rehab centers in {place}</h1>
     <p>Explore treatment facilities listed in our directory. Providers can claim their listing to keep information current.</p>
     {centers.length === 0 ? <p>No published centers found for this location.</p> : <ul>
-      {centers.map(center => <li key={center.id} style={{ margin: '1rem 0' }}>
-        <Link to={`/rehab-centers/${center.slug}`}><strong>{center.name}</strong></Link><br />{center.location}
+      {centers.filter(center => center.claimed && rehabLandingPath(center)).map(center => <li key={center.id} style={{ margin: '1rem 0' }}>
+        <Link to={rehabLandingPath(center)}><strong>{center.name}</strong></Link><br />{center.location}
       </li>)}
     </ul>}
   </main>

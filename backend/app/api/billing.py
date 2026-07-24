@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
-from typing import Annotated
+from typing import Annotated, Any
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
@@ -21,6 +22,7 @@ from app.schemas.billing import (
     SubscriptionPlanOut,
     SubscriptionPlanUpdate,
 )
+from app.services.simple_pdf import build_simple_pdf
 
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 settings = get_settings()
@@ -35,6 +37,56 @@ def _stripe():
 
 def _user_subscription(db: Session, user_id: int) -> Subscription | None:
     return db.query(Subscription).filter(Subscription.user_id == user_id).first()
+
+
+def _require_stripe_customer(user: User, db: Session) -> tuple[Any, Subscription]:
+    st = _stripe()
+    if not st:
+        raise HTTPException(status_code=503, detail="Stripe not configured")
+    sub_row = _user_subscription(db, user.id)
+    if not sub_row or not sub_row.stripe_customer_id:
+        raise HTTPException(status_code=404, detail="No billing account yet")
+    return st, sub_row
+
+
+def _format_money(amount_cents: int | None, currency: str | None = "usd") -> str:
+    cents = int(amount_cents or 0)
+    cur = (currency or "usd").upper()
+    return f"{cur} {cents / 100:.2f}"
+
+
+def _invoice_row(inv) -> dict:
+    return {
+        "id": inv.id,
+        "number": inv.number or inv.id,
+        "status": inv.status,
+        "amount_due": inv.amount_due,
+        "amount_paid": inv.amount_paid,
+        "currency": inv.currency,
+        "amount_label": _format_money(inv.amount_paid if inv.status == "paid" else inv.amount_due, inv.currency),
+        "created": datetime.fromtimestamp(inv.created, tz=timezone.utc).isoformat() if inv.created else None,
+        "period_start": datetime.fromtimestamp(inv.period_start, tz=timezone.utc).isoformat() if getattr(inv, "period_start", None) else None,
+        "period_end": datetime.fromtimestamp(inv.period_end, tz=timezone.utc).isoformat() if getattr(inv, "period_end", None) else None,
+        "hosted_invoice_url": inv.hosted_invoice_url,
+        "invoice_pdf": inv.invoice_pdf,
+        "description": (inv.description or (inv.lines.data[0].description if inv.lines and inv.lines.data else None) or "Subscription"),
+    }
+
+
+def _payment_row(charge) -> dict:
+    return {
+        "id": charge.id,
+        "status": charge.status,
+        "paid": bool(charge.paid),
+        "amount": charge.amount,
+        "currency": charge.currency,
+        "amount_label": _format_money(charge.amount, charge.currency),
+        "created": datetime.fromtimestamp(charge.created, tz=timezone.utc).isoformat() if charge.created else None,
+        "description": charge.description or charge.statement_descriptor or "Payment",
+        "receipt_url": charge.receipt_url,
+        "invoice_id": charge.invoice if isinstance(charge.invoice, str) else (charge.invoice.id if charge.invoice else None),
+        "failure_message": charge.failure_message,
+    }
 
 
 def _stripe_timestamp(value) -> datetime | None:
@@ -167,6 +219,104 @@ def billing_portal(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
     return {"portal_url": session.url}
 
 
+@router.get("/invoices")
+def list_invoices(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+    """List Stripe invoices for the signed-in provider."""
+    st = _stripe()
+    sub_row = _user_subscription(db, user.id)
+    if not st or not sub_row or not sub_row.stripe_customer_id:
+        return {"invoices": [], "stripe_configured": bool(st), "has_customer": bool(sub_row and sub_row.stripe_customer_id)}
+    try:
+        invoices = st.Invoice.list(customer=sub_row.stripe_customer_id, limit=50)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Unable to load invoices: {exc}") from exc
+    return {
+        "invoices": [_invoice_row(inv) for inv in invoices.data],
+        "stripe_configured": True,
+        "has_customer": True,
+    }
+
+
+@router.get("/payments")
+def list_payments(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+    """List Stripe charges / payment history for the signed-in provider."""
+    st = _stripe()
+    sub_row = _user_subscription(db, user.id)
+    if not st or not sub_row or not sub_row.stripe_customer_id:
+        return {"payments": [], "stripe_configured": bool(st), "has_customer": bool(sub_row and sub_row.stripe_customer_id)}
+    try:
+        charges = st.Charge.list(customer=sub_row.stripe_customer_id, limit=50)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"Unable to load payments: {exc}") from exc
+    return {
+        "payments": [_payment_row(ch) for ch in charges.data],
+        "stripe_configured": True,
+        "has_customer": True,
+    }
+
+
+@router.get("/invoices/{invoice_id}/pdf")
+def download_invoice_pdf(invoice_id: str, user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+    """Redirect to the official Stripe invoice PDF for this customer."""
+    st, sub_row = _require_stripe_customer(user, db)
+    try:
+        inv = st.Invoice.retrieve(invoice_id)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=404, detail="Invoice not found") from exc
+    if inv.customer != sub_row.stripe_customer_id:
+        raise HTTPException(status_code=403, detail="Invoice does not belong to this account")
+    if not inv.invoice_pdf:
+        raise HTTPException(status_code=404, detail="PDF not available for this invoice yet")
+    return RedirectResponse(url=inv.invoice_pdf)
+
+
+@router.get("/history.pdf")
+def download_billing_history_pdf(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+    """Download a PDF summary of invoices and payment history."""
+    st = _stripe()
+    sub_row = _user_subscription(db, user.id)
+    lines = [
+        f"Account: {user.email}",
+        f"Generated: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+        "",
+        "INVOICES",
+        "-" * 72,
+    ]
+    invoices: list[Any] = []
+    payments: list[Any] = []
+    if st and sub_row and sub_row.stripe_customer_id:
+        try:
+            invoices = st.Invoice.list(customer=sub_row.stripe_customer_id, limit=50).data
+            payments = st.Charge.list(customer=sub_row.stripe_customer_id, limit=50).data
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=502, detail=f"Unable to build history PDF: {exc}") from exc
+
+    if not invoices:
+        lines.append("No invoices found.")
+    else:
+        for inv in invoices:
+            row = _invoice_row(inv)
+            created = (row["created"] or "")[:10]
+            lines.append(f"{created}  {row['number']}  {row['status']}  {row['amount_label']}  {row['description']}")
+
+    lines.extend(["", "PAYMENT HISTORY", "-" * 72])
+    if not payments:
+        lines.append("No payments found.")
+    else:
+        for ch in payments:
+            row = _payment_row(ch)
+            created = (row["created"] or "")[:10]
+            lines.append(f"{created}  {row['id']}  {row['status']}  {row['amount_label']}  {row['description']}")
+
+    pdf = build_simple_pdf("SWA Studio — Billing History", lines)
+    filename = f"swa-billing-history-{datetime.now(timezone.utc).strftime('%Y%m%d')}.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/webhook")
 async def stripe_webhook(request: Request, db: Annotated[Session, Depends(get_db)]):
     st = _stripe()
@@ -259,6 +409,24 @@ async def stripe_webhook(request: Request, db: Annotated[Session, Depends(get_db
                         from datetime import timedelta, timezone as tz
                         from datetime import datetime as dt
                         center.featured_until = dt.now(tz.utc) + timedelta(days=30)
+                    if user:
+                        product_label = order.product_type.value.replace("_", " ").title()
+                        send_email(
+                            db,
+                            to_email=user.email,
+                            template_key="upsell_receipt",
+                            context={
+                                "name": user.email,
+                                "center_name": center.name if center else "your listing",
+                                "product_label": product_label,
+                                "amount": f"${(order.amount_cents or 0) / 100:.2f}",
+                                "order_id": str(order.id),
+                                "login_url": f"{settings.admin_site_url}/login",
+                                "billing_url": f"{settings.admin_site_url}/client/billing",
+                            },
+                            user_id=user.id,
+                            rehab_center_id=order.rehab_center_id,
+                        )
             elif etype == "checkout.session.completed":
                 grant_claim_on_payment(
                     db,
@@ -274,6 +442,36 @@ async def stripe_webhook(request: Request, db: Annotated[Session, Depends(get_db
                         context={"name": user.email, "center_name": "your listing", "amount": "$9.99", "receipt_url": f"{settings.admin_site_url}/client/billing", "billing_url": f"{settings.admin_site_url}/client/billing"},
                         user_id=user.id,
                     )
+
+    elif etype == "invoice.paid":
+        customer_id = data.get("customer")
+        billing_reason = data.get("billing_reason") or ""
+        sub_row = db.query(Subscription).filter(Subscription.stripe_customer_id == customer_id).first() if customer_id else None
+        if sub_row and billing_reason in ("subscription_cycle", "subscription_update"):
+            user = db.query(User).filter(User.id == sub_row.user_id).first()
+            center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == sub_row.user_id).first()
+            amount = data.get("amount_paid")
+            amount_label = f"${amount / 100:.2f}" if isinstance(amount, int) else "$9.99"
+            renewal = (
+                sub_row.current_period_end.strftime("%b %-d, %Y")
+                if sub_row.current_period_end
+                else ""
+            )
+            if user:
+                send_email(
+                    db,
+                    to_email=user.email,
+                    template_key="subscription_renewed",
+                    context={
+                        "name": user.email,
+                        "center_name": center.name if center else "your listing",
+                        "amount": amount_label,
+                        "renewal_date": renewal,
+                        "billing_url": f"{settings.admin_site_url}/client/billing",
+                    },
+                    user_id=user.id,
+                    rehab_center_id=center.id if center else None,
+                )
 
     elif etype == "invoice.payment_failed":
         customer_id = data.get("customer")

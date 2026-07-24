@@ -18,7 +18,7 @@ from app.models.profile import UserProfile
 from app.models.rehab import ClaimStatus, FacilityRole, RehabCenter, RehabCenterClaim
 from app.models.user import User, UserRole
 from app.schemas.rehab import ClaimOut, ClaimStatusPublic
-from app.services.email import send_email
+from app.services.email import resolve_email_delivery, send_email
 from app.services.phone import send_callback_code
 from app.services.storage import get_public_url, upload_file
 from app.services.tickets import generate_claim_ticket
@@ -132,6 +132,34 @@ def start_claim(body: ClaimStartRequest, db: Annotated[Session, Depends(get_db)]
 
     listing_url = f"{settings.public_site_url}/rehab-centers"
     claim_url = f"{settings.public_site_url}/claim-status/{ticket}"
+    ops = resolve_email_delivery(db)["ops_email"]
+    send_email(
+        db,
+        to_email=ops,
+        template_key="admin_new_claim",
+        context={
+            "name": body.full_name,
+            "email": email,
+            "lead_phone": body.phone or "",
+            "center_name": center.name,
+            "ticket": ticket,
+            "claim_url": claim_url,
+            "admin_claims_url": f"{settings.admin_site_url}/admin/claims",
+        },
+        rehab_center_id=center.id,
+    )
+    send_email(
+        db,
+        to_email=email,
+        template_key="account_created",
+        context={
+            "name": body.full_name,
+            "email": email,
+            "login_url": f"{settings.admin_site_url}/login",
+        },
+        user_id=user.id,
+        rehab_center_id=center.id,
+    )
     send_email(
         db,
         to_email=email,
@@ -188,6 +216,22 @@ async def upload_claim_cert(
         claim.status = ClaimStatus.under_review
     db.commit()
 
+    ops = resolve_email_delivery(db)["ops_email"]
+    send_email(
+        db,
+        to_email=ops,
+        template_key="claim_under_review_admin",
+        context={
+            "name": claim.full_name,
+            "email": claim.work_email,
+            "center_name": claim.center.name if claim.center else "center",
+            "ticket": claim.ticket_number,
+            "admin_claims_url": f"{settings.admin_site_url}/admin/claims",
+        },
+        user_id=claim.submitter_user_id,
+        rehab_center_id=claim.rehab_center_id,
+    )
+
     return ClaimStartOut(
         ticket_number=claim.ticket_number,
         status=claim.status,
@@ -222,6 +266,19 @@ def send_phone_callback(ticket: str, db: Annotated[Session, Depends(get_db)]):
     claim.phone_otp_hash = hash_password(code)
     claim.phone_otp_expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
     send_callback_code(center_phone, code)
+    send_email(
+        db,
+        to_email=claim.work_email,
+        template_key="phone_callback_code",
+        context={
+            "name": claim.full_name,
+            "center_name": claim.center.name if claim.center else "your center",
+            "otp_code": code,
+            "claim_url": f"{settings.public_site_url}/claim-status/{claim.ticket_number}",
+        },
+        user_id=claim.submitter_user_id,
+        rehab_center_id=claim.rehab_center_id,
+    )
     db.commit()
     return {"message": "A confirmation code was sent to the facility phone number on this listing.", "expires_in_minutes": 15}
 
@@ -408,6 +465,18 @@ def downgrade_center_after_cancel(db: Session, user_id: int, *, send_winback: bo
     center.verified_badge = False
     center.featured_until = None
     if user and send_winback:
+        send_email(
+            db,
+            to_email=user.email,
+            template_key="subscription_expired",
+            context={
+                "name": user.email,
+                "center_name": center.name,
+                "billing_url": f"{settings.admin_site_url}/client/billing",
+            },
+            user_id=user.id,
+            rehab_center_id=center.id,
+        )
         send_email(
             db,
             to_email=user.email,

@@ -1,10 +1,10 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 
-export default function ProtectedRoute({ children, roles }) {
+export default function ProtectedRoute({ children, roles, loginPath = '/login' }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="loading-screen">Loading</div>
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to={loginPath} replace />
   if (roles && !roles.includes(user.role)) return <Navigate to="/" replace />
   return children
 }

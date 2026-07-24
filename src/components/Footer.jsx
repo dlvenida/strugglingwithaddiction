@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import SocialLinks from './SocialLinks'
+import { providerPortalPath } from '../lib/adminSite'
 import './Footer.css'
 
 const year = new Date().getFullYear()
@@ -34,6 +35,7 @@ export default function Footer() {
               <li><Link to="/about">About</Link></li>
               <li><Link to="/blog">Blog</Link></li>
               <li><Link to="/rehab-centers">Rehab Centers</Link></li>
+              <li><Link to={providerPortalPath()}>Rehab Provider Login</Link></li>
             </ul>
           </div>
           <div className="footer-col">

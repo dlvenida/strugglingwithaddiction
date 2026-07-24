@@ -12,9 +12,9 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import text
 
-from app.api import auth, blog, billing, client_portal, profiles, rehab, search, users, import_centers, claim_journey, leads_upsells, lifecycle
+from app.api import auth, blog, billing, client_portal, profiles, rehab, search, users, import_centers, claim_journey, leads_upsells, lifecycle, email_admin, insurance, analytics
 from app.static_site import register_static_site
-from app.bootstrap import bootstrap_admin, bootstrap_plans, seed_rehab_centers
+from app.bootstrap import bootstrap_admin, bootstrap_plans, seed_rehab_centers, seed_insurance_catalog
 from app.seed_import import import_blog_if_empty, import_users_if_missing
 from app.config import get_settings
 from app.db_migrate import run_migrations
@@ -34,6 +34,7 @@ def _run_startup_tasks() -> None:
         bootstrap_admin(db)
         bootstrap_plans(db)
         seed_rehab_centers(db)
+        seed_insurance_catalog(db)
         import_blog_if_empty(db)
         import_users_if_missing(db)
     finally:
@@ -107,6 +108,9 @@ app.include_router(billing.router)
 app.include_router(client_portal.router)
 app.include_router(search.router)
 app.include_router(lifecycle.router)
+app.include_router(email_admin.router)
+app.include_router(insurance.router)
+app.include_router(analytics.router)
 
 
 @app.get("/health")

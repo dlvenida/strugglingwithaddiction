@@ -53,6 +53,9 @@ export default function RehabSearch({
   onStateChange,
   service,
   onServiceChange,
+  insurance = '',
+  onInsuranceChange,
+  insuranceOptions = [],
   resultCount,
   totalCount,
   onClear,
@@ -69,14 +72,14 @@ export default function RehabSearch({
     setThinking(true)
     const t = setTimeout(() => setThinking(false), 700)
     return () => clearTimeout(t)
-  }, [query, state, service, hasActiveFilters])
+  }, [query, state, service, insurance, hasActiveFilters])
 
   useEffect(() => {
     const interval = setInterval(() => setHintIdx(i => (i + 1) % AI_HINTS.length), 6000)
     return () => clearInterval(interval)
   }, [])
 
-  const activeFilterCount = (state ? 1 : 0) + (service ? 1 : 0)
+  const activeFilterCount = (state ? 1 : 0) + (service ? 1 : 0) + (insurance ? 1 : 0)
 
   return (
     <div className="rehab-search-wrap">
@@ -165,6 +168,34 @@ export default function RehabSearch({
                   ))}
                 </select>
               </div>
+
+              {typeof onInsuranceChange === 'function' && (
+                <div className="rehab-search-filter-group">
+                  <label htmlFor="rehab-insurance-select">Insurance</label>
+                  <select
+                    id="rehab-insurance-select"
+                    value={insurance}
+                    onChange={e => onInsuranceChange(e.target.value)}
+                  >
+                    <option value="">All insurance</option>
+                    {(insuranceOptions.length
+                      ? insuranceOptions
+                      : [
+                          { name: 'Aetna' },
+                          { name: 'Blue Cross Blue Shield' },
+                          { name: 'Cigna' },
+                          { name: 'UnitedHealthcare' },
+                          { name: 'Tricare' },
+                          { name: 'Medicaid' },
+                          { name: 'Medicare' },
+                          { name: 'Private Pay' },
+                        ]
+                    ).map(opt => (
+                      <option key={opt.slug || opt.name} value={opt.name}>{opt.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>

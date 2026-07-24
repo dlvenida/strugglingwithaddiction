@@ -72,6 +72,17 @@ def change_password(body: ChangePasswordRequest, user: CurrentUser, db: Annotate
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
     user.password_hash = hash_password(body.new_password)
     db.commit()
+    send_email(
+        db,
+        to_email=user.email,
+        template_key="password_changed",
+        context={
+            "name": user.profile.display_name if user.profile else user.email,
+            "reset_url": f"{settings.admin_site_url}/reset-password",
+            "support_email": settings.email_from,
+        },
+        user_id=user.id,
+    )
     return {"message": "Password updated"}
 
 
@@ -101,6 +112,17 @@ def reset_password(body: PasswordResetConfirm, db: Annotated[Session, Depends(ge
         raise HTTPException(status_code=400, detail="Invalid password-reset link")
     user.password_hash = hash_password(body.new_password)
     db.commit()
+    send_email(
+        db,
+        to_email=user.email,
+        template_key="password_changed",
+        context={
+            "name": user.profile.display_name if user.profile else user.email,
+            "reset_url": f"{settings.admin_site_url}/reset-password",
+            "support_email": settings.email_from,
+        },
+        user_id=user.id,
+    )
     return {"message": "Password updated. You can now sign in."}
 
 
@@ -147,4 +169,15 @@ def register_client(body: RegisterClientRequest, db: Annotated[Session, Depends(
     slug_base = body.display_name.lower().replace(" ", "-")[:50]
     db.add(UserProfile(user_id=user.id, display_name=body.display_name, slug=f"{slug_base}-{user.id}"))
     db.commit()
+    send_email(
+        db,
+        to_email=user.email,
+        template_key="account_created",
+        context={
+            "name": body.display_name,
+            "email": user.email,
+            "login_url": f"{settings.admin_site_url}/login",
+        },
+        user_id=user.id,
+    )
     return {"user_id": user.id, "message": "Registered. Complete checkout to activate."}

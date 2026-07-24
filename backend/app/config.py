@@ -50,8 +50,8 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_price_monthly: str = ""
     stripe_price_yearly: str = ""
-    public_site_url: str = "http://localhost:5173"
-    admin_site_url: str = "http://localhost:5174"
+    public_site_url: str = "http://127.0.0.1:5173"
+    admin_site_url: str = "http://127.0.0.1:5180"
     s3_endpoint_url: str = ""
     s3_access_key_id: str = ""
     s3_secret_access_key: str = ""
@@ -77,6 +77,8 @@ class Settings(BaseSettings):
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_from_number: str = ""
+    # Optional — enables live Google review feed on rehab detail pages
+    google_places_api_key: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

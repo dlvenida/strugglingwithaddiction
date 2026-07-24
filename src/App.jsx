@@ -8,6 +8,7 @@ function ScrollToTop() {
 }
 import Header from './components/Header'
 import Footer from './components/Footer'
+import PageViewTracker from './components/PageViewTracker'
 import Home from './pages/Home'
 import About from './pages/About'
 import NotFound from './pages/NotFound'
@@ -25,6 +26,8 @@ const Accessibility = lazy(() => import('./pages/Accessibility'))
 const AuthorPage = lazy(() => import('./pages/AuthorPage'))
 const ClaimStatus = lazy(() => import('./pages/ClaimStatus'))
 const PartnerPage = lazy(() => import('./pages/PartnerPage'))
+const ProviderLoginRedirect = lazy(() => import('./pages/ProviderLoginRedirect'))
+const SuperadminLoginRedirect = lazy(() => import('./pages/SuperadminLoginRedirect'))
 
 function PageLoader() {
   return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'PT Serif, serif', color: '#98b8c4', fontSize: '1.1rem' }}>Loading…</div>
@@ -34,6 +37,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <PageViewTracker />
       <Header />
       <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -44,8 +48,12 @@ export default function App() {
           <Route path="/rehab-centers" element={<RehabCenters />} />
           <Route path="/rehab-centers/state/:state/city/:city" element={<RehabLocationIndex />} />
           <Route path="/rehab-centers/state/:state" element={<RehabLocationIndex />} />
-          <Route path="/rehab-centers/:slug" element={<RehabCenterDetail />} />
+          <Route path="/rehabs/united-states/:state/:city/:facility" element={<RehabCenterDetail />} />
           <Route path="/claim-status/:ticket" element={<ClaimStatus />} />
+          <Route path="/provider" element={<ProviderLoginRedirect />} />
+          <Route path="/provider/login" element={<ProviderLoginRedirect />} />
+          <Route path="/swa-login" element={<SuperadminLoginRedirect />} />
+          <Route path="/swa-login/" element={<SuperadminLoginRedirect />} />
           <Route path="/unsubscribe" element={<Unsubscribe />} />
           <Route path="/partners/:slug" element={<PartnerPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />

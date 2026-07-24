@@ -161,6 +161,31 @@
   white-space: nowrap;
 }
 
+.rehab-verified-badge,
+.rehab-featured-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.65rem;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.rehab-verified-badge {
+  background: rgba(140, 17, 38, 0.08);
+  border: 1px solid rgba(140, 17, 38, 0.35);
+  color: #8c1126;
+}
+
+.rehab-featured-badge {
+  background: #1a1a2e;
+  border: 1px solid #1a1a2e;
+  color: #fff;
+}
+
 .rehab-claim-btn {
   padding: 0.6rem 1.25rem;
   font-size: 0.8rem;
@@ -221,10 +246,28 @@
 .rehab-card-footer {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  justify-content: space-between;
+  gap: 1rem;
   flex-wrap: wrap;
   padding-top: 1rem;
   border-top: 1px solid #f3f4f6;
+}
+
+.rehab-card-contacts {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.rehab-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .rehab-contact {
@@ -239,6 +282,32 @@
 
 .rehab-contact svg { color: #98b8c4; }
 .rehab-contact:hover { color: #8c1126; }
+
+.rehab-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.4rem;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.rehab-action-btn--primary {
+  background: #8c1126;
+  border-color: #8c1126;
+  color: #fff;
+}
+
+.rehab-action-btn--primary:hover {
+  background: #6b0d1e;
+  border-color: #6b0d1e;
+  color: #fff;
+}
 
 .rehab-call-btn {
   margin-left: auto;
@@ -394,6 +463,13 @@
   .rehab-card-top { flex-direction: column; }
   .rehab-claim-btn { width: 100%; text-align: center; }
   .form-row { grid-template-columns: 1fr; }
+  .rehab-card-footer { flex-direction: column; align-items: stretch; }
+  .rehab-card-actions {
+    margin-left: 0;
+    width: 100%;
+    justify-content: stretch;
+  }
+  .rehab-action-btn { flex: 1 1 0; min-width: 0; padding-left: 0.75rem; padding-right: 0.75rem; }
   .rehab-call-btn { margin-left: 0; width: 100%; text-align: center; }
   .rehab-intro-inner { flex-direction: column; gap: 0.5rem; }
   .modal { padding: 1.75rem 1.25rem; }

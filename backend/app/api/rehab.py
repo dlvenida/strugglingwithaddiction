@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import re
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -24,14 +25,24 @@ from app.schemas.rehab import (
     ClaimOut,
     ClaimReview,
     ClaimStatusPublic,
+    CenterReviewsOut,
+    ReviewItem,
     RehabCenterAdmin,
     RehabCenterCreate,
     RehabCenterPublic,
     RehabCenterUpdate,
 )
+from app.config import get_settings
+from app.services.email import send_email
+from app.services.google_reviews import fetch_google_reviews, normalize_manual_testimonials
 from app.services.tickets import generate_claim_ticket
 
 router = APIRouter(tags=["rehab"])
+settings = get_settings()
+
+
+def _landing_segment(value: str | None) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")
 
 
 @router.get("/api/rehab-centers", response_model=list[RehabCenterPublic])
@@ -49,6 +60,37 @@ def list_centers(
     return [center_to_public(db, c) for c in centers]
 
 
+@router.get("/api/rehab-centers/landing/{state}/{city}/{facility}", response_model=RehabCenterPublic)
+def get_claimed_center_landing(
+    state: str,
+    city: str,
+    facility: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Resolve canonical location URLs only for subscribed, claimed centers."""
+    candidates = (
+        db.query(RehabCenter)
+        .filter(RehabCenter.listing_status == ListingStatus.published, RehabCenter.deleted_at.is_(None))
+        .all()
+    )
+    center = next(
+        (
+            item
+            for item in candidates
+            if _landing_segment(item.state) == state
+            and _landing_segment(item.city) == city
+            and _landing_segment(item.name) == facility
+        ),
+        None,
+    )
+    if not center:
+        raise HTTPException(status_code=404, detail="Claimed center landing page not found")
+    public = center_to_public(db, center)
+    if not public.claimed:
+        raise HTTPException(status_code=404, detail="Claimed center landing page not found")
+    return public
+
+
 @router.get("/api/rehab-centers/{slug}", response_model=RehabCenterPublic)
 def get_center(slug: str, db: Annotated[Session, Depends(get_db)]):
     center = db.query(RehabCenter).filter(
@@ -59,6 +101,49 @@ def get_center(slug: str, db: Annotated[Session, Depends(get_db)]):
     if not center:
         raise HTTPException(status_code=404, detail="Center not found")
     return center_to_public(db, center)
+
+
+@router.get("/api/rehab-centers/{slug}/reviews", response_model=CenterReviewsOut)
+def get_center_reviews(slug: str, db: Annotated[Session, Depends(get_db)]):
+    """Return Google Place reviews when configured, otherwise listing testimonials."""
+    center = db.query(RehabCenter).filter(
+        RehabCenter.slug == slug,
+        RehabCenter.listing_status == ListingStatus.published,
+        RehabCenter.deleted_at.is_(None),
+    ).first()
+    if not center:
+        raise HTTPException(status_code=404, detail="Center not found")
+
+    public = center_to_public(db, center)
+    address = ", ".join(
+        part for part in [center.address_line, center.city, center.state, center.zip] if part
+    ) or public.location
+
+    google = fetch_google_reviews(
+        name=center.name,
+        address=address,
+        google_reviews_url=center.google_reviews_url,
+        google_maps_url=center.google_maps_url,
+    )
+    if google and google.get("reviews"):
+        return CenterReviewsOut(
+            source="google",
+            rating=google.get("rating") if google.get("rating") is not None else public.rating,
+            user_ratings_total=google.get("user_ratings_total"),
+            google_maps_url=google.get("google_maps_url") or public.google_maps_url,
+            google_reviews_url=public.google_reviews_url or google.get("google_maps_url"),
+            reviews=[ReviewItem(**item) for item in google["reviews"]],
+        )
+
+    manual = normalize_manual_testimonials(public.testimonials, default_rating=public.rating)
+    return CenterReviewsOut(
+        source="manual",
+        rating=public.rating,
+        user_ratings_total=len(manual) or None,
+        google_maps_url=public.google_maps_url,
+        google_reviews_url=public.google_reviews_url,
+        reviews=[ReviewItem(**item) for item in manual],
+    )
 
 
 @router.post("/api/rehab/claims", response_model=ClaimOut)
@@ -333,6 +418,55 @@ def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotat
         pass
     db.commit()
     db.refresh(claim)
+
+    claim_url = f"{settings.public_site_url}/claim-status/{claim.ticket_number}"
+    if body.status == ClaimStatus.certified and claim.work_email:
+        send_email(
+            db,
+            to_email=claim.work_email,
+            template_key="claim_certified",
+            context={
+                "name": claim.full_name,
+                "center_name": center.name,
+                "ticket": claim.ticket_number,
+                "claim_url": claim_url,
+                "billing_url": f"{settings.admin_site_url}/client/billing",
+            },
+            user_id=claim.submitter_user_id,
+            rehab_center_id=center.id,
+        )
+    elif body.status == ClaimStatus.approved and claim.work_email:
+        send_email(
+            db,
+            to_email=claim.work_email,
+            template_key="welcome",
+            context={
+                "name": claim.full_name,
+                "center_name": center.name,
+                "login_url": f"{settings.admin_site_url}/login",
+                "billing_url": f"{settings.admin_site_url}/client/billing",
+                "receipt_url": f"{settings.admin_site_url}/client/billing",
+                "support_email": settings.email_from,
+            },
+            user_id=claim.submitter_user_id,
+            rehab_center_id=center.id,
+        )
+    elif body.status == ClaimStatus.rejected and claim.work_email:
+        send_email(
+            db,
+            to_email=claim.work_email,
+            template_key="claim_rejected",
+            context={
+                "name": claim.full_name,
+                "center_name": center.name,
+                "ticket": claim.ticket_number,
+                "admin_notes": (claim.admin_notes or body.admin_notes or "Please contact support if you believe this was in error."),
+                "support_email": settings.email_from,
+            },
+            user_id=claim.submitter_user_id,
+            rehab_center_id=center.id,
+        )
+
     return ClaimAdmin(
         id=claim.id,
         ticket_number=claim.ticket_number,

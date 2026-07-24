@@ -48,3 +48,6 @@ export function IconExternalLink(props) {
     </Icon>
   )
 }
+export function IconChart(props) {
+  return <Icon {...props}><path {...stroke} d="M3 17V9M8 17V5M13 17v-6M18 17V7" /></Icon>
+}

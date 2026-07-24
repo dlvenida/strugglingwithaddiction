@@ -6,6 +6,18 @@ export function getApiBase() {
 
 const API_URL = getApiBase()
 
+function loginRedirectHref(role = localStorage.getItem('role')) {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+  const path = role === 'admin' ? '/swa-login' : '/login'
+  return `${base}${path}` || path
+}
+
+function clearSession() {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('role')
+}
+
 function getToken() {
   return localStorage.getItem('access_token')
 }
@@ -36,10 +48,9 @@ export async function api(path, options = {}) {
   }
 
   if (res.status === 401 && !path.includes('/auth/login')) {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    localStorage.removeItem('role')
-    window.location.href = '/login'
+    const role = localStorage.getItem('role')
+    clearSession()
+    window.location.href = loginRedirectHref(role)
     throw new Error('Session expired — please sign in again')
   }
 
@@ -79,6 +90,34 @@ export async function apiUpload(path, file) {
     throw new Error(parseErrorDetail(data, res.statusText))
   }
   return res.json()
+}
+
+/** Fetch a binary response (PDF, etc.) with auth. */
+export async function apiBlob(path) {
+  const url = `${API_URL}${path.startsWith('/') ? path : `/${path}`}`
+  const token = getToken()
+  const res = await fetch(url, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    redirect: 'follow',
+  })
+  if (res.status === 401) {
+    const role = localStorage.getItem('role')
+    clearSession()
+    window.location.href = loginRedirectHref(role)
+    throw new Error('Session expired — please sign in again')
+  }
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(parseErrorDetail(data, res.statusText))
+  }
+  return {
+    blob: await res.blob(),
+    filename: (() => {
+      const disposition = res.headers.get('Content-Disposition') || ''
+      const match = disposition.match(/filename="?([^"]+)"?/i)
+      return match?.[1] || 'download.pdf'
+    })(),
+  }
 }
 
 export { API_URL }

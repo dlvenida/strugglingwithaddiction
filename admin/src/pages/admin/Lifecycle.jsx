@@ -20,6 +20,6 @@ export default function Lifecycle() {
       {error && <p className="error">{error}</p>}
       {result && <p className="success">Sent {result.claim_abandon_reminders} claim reminder(s) and {result.renewal_reminders} renewal reminder(s).</p>}
     </Card>
-    <Card><p className="eyebrow">Provider settings</p><p className="muted">Email delivery: RESEND_API_KEY or SMTP_*; callback verification: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER; billing: STRIPE_* variables. These are deployment secrets and intentionally managed outside the dashboard.</p></Card>
+    <Card><p className="eyebrow">Provider settings</p><p className="muted">Email delivery (Resend / Gmail SMTP), templates, and activity logs are managed under Emails. Callback verification still uses TWILIO_* and billing uses STRIPE_* env variables.</p></Card>
   </div>
 }

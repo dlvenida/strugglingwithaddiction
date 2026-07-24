@@ -155,7 +155,7 @@ export default function ClaimStatus() {
 
             {data.status === 'approved' && (
               <p style={{ marginTop: 12 }}>
-                <a href={`${import.meta.env.VITE_ADMIN_URL || 'http://localhost:5180'}/login`}>Log in to your dashboard →</a>
+                <a href={`${import.meta.env.VITE_ADMIN_SITE_URL || 'http://127.0.0.1:5180'}/login`}>Log in to your dashboard →</a>
               </p>
             )}
           </div>
