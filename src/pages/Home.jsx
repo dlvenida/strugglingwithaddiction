@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import {
   FaHandsHelping,
   FaClinicMedical,
@@ -9,7 +9,11 @@ import {
   FaPhoneAlt,
 } from 'react-icons/fa'
 import { useRecentPosts } from '../hooks/useBlogData'
+import GuidedFinder from '../components/GuidedFinder'
+import NewsletterSection from '../components/NewsletterSection'
 import './Home.css'
+
+const USStateMap = lazy(() => import('../components/USStateMap'))
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
@@ -18,10 +22,10 @@ function formatDate(iso) {
 const ICON_STYLE = { color: '#8c1126', fontSize: '2rem', flexShrink: 0 }
 
 const stats = [
-  { end: 21, suffix: 'M+', label: 'Americans struggle with addiction' },
+  { end: 48, suffix: 'M+', label: 'Americans struggle with addiction' },
   { end: 10, suffix: '%',  label: 'actually receive treatment' },
   { end: 95, suffix: '%',  label: 'recovery rate with proper support' },
-  { static: '24/7',        label: 'confidential support available' },
+  { static: '988',         label: 'crisis line — call or text anytime' },
 ]
 
 function StatNumber({ end, suffix, static: isStatic, triggered }) {
@@ -50,52 +54,52 @@ function StatNumber({ end, suffix, static: isStatic, triggered }) {
 
 const services = [
   {
-    icon: <FaHandsHelping style={ICON_STYLE} aria-hidden="true" />,
-    title: 'Peer Support',
-    body: 'Connect with others who have walked the same path. Our peer network offers understanding, accountability, and hope drawn from lived experience.',
+    icon: <FaMapMarkerAlt style={ICON_STYLE} aria-hidden="true" />,
+    title: 'Browse by State',
+    body: 'Search licensed treatment centers across all 50 states. Use the map or directory filters to see what is available near you.',
   },
   {
     icon: <FaClinicMedical style={ICON_STYLE} aria-hidden="true" />,
-    title: 'Treatment Guidance',
-    body: 'We help you navigate the complex landscape of addiction treatment — from detox and inpatient programs to outpatient therapy and medication-assisted treatment.',
+    title: 'Filter by Care Type',
+    body: 'Narrow results by detox, inpatient, outpatient, medication-assisted treatment, dual diagnosis, and other specialties.',
+  },
+  {
+    icon: <FaHandsHelping style={ICON_STYLE} aria-hidden="true" />,
+    title: 'Verified Listings',
+    body: 'Every facility is reviewed by our team or maintained by the center itself, so you are not left guessing who is legitimate.',
   },
   {
     icon: <FaUsers style={ICON_STYLE} aria-hidden="true" />,
-    title: 'Family Resources',
-    body: 'Addiction affects the whole family. Our resources help loved ones understand addiction, set healthy boundaries, and heal together.',
-  },
-  {
-    icon: <FaMapMarkerAlt style={ICON_STYLE} aria-hidden="true" />,
-    title: 'Local Finder',
-    body: 'Find accredited treatment centers, support groups, and counselors near you with our comprehensive, verified directory.',
+    title: 'Compare Your Options',
+    body: 'Read locations, specialties, and program details side by side before you decide which center to contact.',
   },
   {
     icon: <FaBookOpen style={ICON_STYLE} aria-hidden="true" />,
-    title: 'Education & Tools',
-    body: 'Access evidence-based articles, self-assessment tools, and guides to help you understand addiction and take the next right step.',
+    title: 'Articles & Guides',
+    body: 'Evidence-based articles that explain what different types of treatment involve, so you know what to look for and what to ask.',
   },
   {
     icon: <FaPhoneAlt style={ICON_STYLE} aria-hidden="true" />,
-    title: 'Crisis Support',
-    body: 'When you need someone right now, we are here. Our crisis line connects you to a compassionate counselor 24 hours a day, 7 days a week.',
+    title: 'Claim Your Listing',
+    body: 'Run a treatment facility? Claim your profile to update your information, add photos, and reach people actively searching for care.',
   },
 ]
 
 const steps = [
   {
     num: '01',
-    title: 'Reach Out',
-    body: 'Call our helpline or fill out our confidential intake form. No judgment — just compassionate support.',
+    title: 'Search',
+    body: 'Browse verified treatment centers by state, level of care, and insurance accepted.',
   },
   {
     num: '02',
-    title: 'Get a Plan',
-    body: 'Work with our team to identify the right resources and treatment path tailored to your unique situation.',
+    title: 'Compare',
+    body: 'See license and accreditation, specialties, and what each center offers — side by side, no pressure.',
   },
   {
     num: '03',
-    title: 'Begin Recovery',
-    body: 'Take the first step with confidence. We stay by your side through treatment, sobriety, and beyond.',
+    title: 'Reach Out',
+    body: 'Contact centers directly, on your terms. Always free, always confidential.',
   },
 ]
 
@@ -111,7 +115,7 @@ const testimonials = [
     detail: 'Family member of a person in recovery',
   },
   {
-    quote: 'I called the helpline at 2am not knowing what to say. The counselor stayed with me for two hours and helped me check into a treatment program the next morning.',
+    quote: 'I did not know where to turn at 2am. This directory helped me find a licensed treatment center nearby, and I was in a program the next morning.',
     name: 'David T.',
     detail: 'Recovered from alcohol use disorder',
   },
@@ -171,18 +175,19 @@ export default function Home() {
         ))}
         <div className="hero-overlay" />
         <div className="container hero-content">
-          <span className="section-label" style={{ color: '#98b8c4' }}>You Are Not Alone</span>
-          <h1>Recovery Starts With<br />One Brave Step</h1>
-          <p className="hero-sub">
-            Whether you are struggling yourself or watching someone you love suffer,
-            real help is available right now — free, confidential, and compassionate.
-          </p>
-          <div className="hero-ctas">
-            <a href="tel:18005551234" className="btn">Call the Helpline</a>
+          <div className="hero-layout">
+            <div className="hero-copy">
+              <span className="section-label" style={{ color: '#98b8c4' }}>You Are Not Alone</span>
+              <h1>You don't have to figure this out alone.</h1>
+              <p className="hero-sub">
+                Find a licensed treatment center near you, browse by state or by the kind of care you need,
+                and get straight answers about what recovery actually looks like.
+              </p>
+            </div>
+            <div className="hero-finder">
+              <GuidedFinder variant="hero" />
+            </div>
           </div>
-          <p className="hero-note">
-            Available 24/7 · Free &amp; Confidential · No Insurance Required
-          </p>
         </div>
         <div className="hero-dots">
           {HERO_IMAGES.map((_, i) => (
@@ -220,14 +225,13 @@ export default function Home() {
               brain disease that requires real medical support.
             </p>
             <p>
-              At Struggling With Addiction, we believe that every person deserves
-              access to accurate information, compassionate guidance, and a clear
-              path toward healing. We exist to bridge the gap between suffering
-              and recovery.
+              At Struggling With Addiction, we believe everyone deserves clear,
+              accurate information when looking for treatment. We are a directory —
+              not a treatment provider — helping you browse verified centers,
+              compare options, and contact facilities directly.
             </p>
             <div className="hope-ctas">
-              <a href="/about" className="btn">Learn About Our Mission</a>
-              <a href="#services" className="btn btn-outline">Explore Resources</a>
+              <a href="#services" className="btn">Explore Resources</a>
             </div>
           </div>
           <div className="hope-image" aria-hidden="true">
@@ -275,11 +279,11 @@ export default function Home() {
       <section className="services-section" id="services">
         <div className="container">
           <div className="section-header text-center">
-            <span className="section-label">What We Offer</span>
-            <h2>Resources Built for Every Step of Recovery</h2>
+            <span className="section-label">The Directory</span>
+            <h2>Find the right treatment center, faster</h2>
             <p className="section-desc">
-              Whether you are just starting to think about recovery or have been
-              on this road for years, we have tools and support for where you are right now.
+              We do not provide treatment ourselves. We help you search licensed facilities,
+              compare types of care, and understand your options before you reach out.
             </p>
           </div>
           <div className="services-grid">
@@ -293,7 +297,7 @@ export default function Home() {
 
           </div>
           <div className="text-center" style={{ marginTop: '3rem' }}>
-            <a href="#find-help" className="btn">Find Help Now</a>
+            <Link to="/rehab-centers" className="btn">Find a treatment center</Link>
           </div>
         </div>
       </section>
@@ -308,15 +312,27 @@ export default function Home() {
           <div className="steps-grid">
             {steps.map(s => (
               <div className="step" key={s.num}>
-                <div className="step-num">{s.num}</div>
+                <div className="step-num" aria-hidden="true">{s.num}</div>
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
               </div>
             ))}
           </div>
           <div className="how-ctas">
-            <a href="tel:18005551234" className="btn">Call Now — It's Free</a>
-            <a href="#find-help" className="btn btn-outline">Search Treatment Centers</a>
+            <Link to="/rehab-centers" className="btn">Search Treatment Centers</Link>
+            <p className="how-crisis-note">
+              In crisis? Call or text{' '}
+              <a href="tel:988" aria-label="988 Suicide and Crisis Lifeline">988</a>{' '}
+              (free, 24/7). Find treatment now at{' '}
+              <a
+                href="https://findtreatment.gov"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="FindTreatment.gov (opens in new tab)"
+              >
+                FindTreatment.gov
+              </a>.
+            </p>
           </div>
         </div>
       </section>
@@ -346,46 +362,39 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Crisis Banner ─────────────────────────── */}
-      <section className="crisis-banner" id="crisis">
-        <div className="container crisis-inner">
-          <div className="crisis-content">
-            <span className="crisis-badge">CRISIS SUPPORT</span>
-            <h2>Are You in Crisis Right Now?</h2>
-            <p>
-              If you or someone you know is in immediate danger or experiencing
-              a mental health emergency, please call or text for help immediately.
-              You do not have to face this alone.
-            </p>
+      {/* ── State Map ───────────────────────────── */}
+      <section className="home-state-map-section" id="find-by-state">
+        <div className="container">
+          <div className="home-state-map-layout">
+            <div className="home-state-map-text">
+              <span className="section-label">Treatment Directory</span>
+              <h2>Browse Treatment by State</h2>
+              <p className="section-desc">
+                Hover over a state to preview, then click to view accredited rehab centers in that region.
+              </p>
+            </div>
+            <div className="home-state-map-visual">
+              <Suspense fallback={<div className="us-state-map-loading">Loading map…</div>}>
+                <USStateMap />
+              </Suspense>
+            </div>
           </div>
-          <div className="crisis-ctas">
-            <a href="tel:988" className="btn btn-white">
-              Call 988 — Suicide &amp; Crisis Lifeline
-            </a>
-            <a href="tel:18005551234" className="btn btn-white-outline">
-              Call Our Helpline: 1-800-555-1234
-            </a>
+          <div className="home-provider-upsell">
+            <div className="home-provider-upsell-inner">
+              <div>
+                <h2>Run a treatment facility?</h2>
+                <p>
+                  Your facility may already be listed. Claim your profile to update your information,
+                  add photos, and get seen by the people searching for care right now.
+                </p>
+              </div>
+              <Link to="/rehab-centers" className="btn btn-outline">Claim your listing</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── Newsletter / Final CTA ─────────────────── */}
-      <section className="newsletter-section">
-        <div className="container newsletter-inner">
-          <div className="newsletter-text">
-            <span className="section-label">Stay Connected</span>
-            <h2>Get Recovery Resources<br />Delivered to Your Inbox</h2>
-            <p>
-              Weekly guidance, stories of hope, and practical tools — all free and
-              sent with care. No spam, ever. Unsubscribe any time.
-            </p>
-          </div>
-          <form className="newsletter-form" onSubmit={e => e.preventDefault()}>
-            <input type="email" placeholder="Your email address" aria-label="Email address" />
-            <button type="submit" className="btn">Subscribe Free</button>
-          </form>
-        </div>
-      </section>
+      <NewsletterSection />
 
     </main>
   )

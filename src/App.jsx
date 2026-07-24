@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -19,6 +19,7 @@ const BlogPost = lazy(() => import('./pages/BlogPost'))
 const RehabCenters = lazy(() => import('./pages/RehabCenters'))
 const RehabCenterDetail = lazy(() => import('./pages/RehabCenterDetail'))
 const RehabLocationIndex = lazy(() => import('./pages/RehabLocationIndex'))
+const Portal = lazy(() => import('./pages/Portal'))
 const Unsubscribe = lazy(() => import('./pages/Unsubscribe'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsOfUse = lazy(() => import('./pages/TermsOfUse'))
@@ -49,6 +50,8 @@ export default function App() {
           <Route path="/rehab-centers/state/:state/city/:city" element={<RehabLocationIndex />} />
           <Route path="/rehab-centers/state/:state" element={<RehabLocationIndex />} />
           <Route path="/rehabs/united-states/:state/:city/:facility" element={<RehabCenterDetail />} />
+          <Route path="/portal" element={<Portal />} />
+          <Route path="/our-team" element={<Navigate to="/about" replace />} />
           <Route path="/claim-status/:ticket" element={<ClaimStatus />} />
           <Route path="/provider" element={<ProviderLoginRedirect />} />
           <Route path="/provider/login" element={<ProviderLoginRedirect />} />
