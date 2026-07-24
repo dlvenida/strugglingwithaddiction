@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fa'
 import { useRecentPosts } from '../hooks/useBlogData'
 import GuidedFinder from '../components/GuidedFinder'
+import InsuranceAcceptedSection from '../components/InsuranceAcceptedSection'
 import NewsletterSection from '../components/NewsletterSection'
 import './Home.css'
 
@@ -393,6 +394,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <InsuranceAcceptedSection />
 
       <NewsletterSection />
 

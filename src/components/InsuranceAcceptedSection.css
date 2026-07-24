@@ -1,0 +1,99 @@
+.insurance-accepted-section {
+  padding: 5rem 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 20%, rgba(152, 184, 196, 0.18), transparent 55%),
+    radial-gradient(ellipse 70% 50% at 90% 80%, rgba(140, 17, 38, 0.06), transparent 50%),
+    linear-gradient(180deg, #f7f9fb 0%, #eef3f6 100%);
+}
+
+.insurance-accepted-section .section-header {
+  margin-bottom: 2.5rem;
+}
+
+.insurance-accepted-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.insurance-accepted-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 108px;
+  padding: 1rem 0.75rem;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-radius: 12px;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.insurance-accepted-link:hover,
+.insurance-accepted-link:focus-visible {
+  background: #fff;
+  border-color: rgba(140, 17, 38, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(26, 26, 46, 0.08);
+  outline: none;
+}
+
+.insurance-accepted-link img {
+  width: 100%;
+  max-width: 140px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.insurance-accepted-link span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4b5563;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.insurance-accepted-cta {
+  margin-top: 2.5rem;
+}
+
+@media (max-width: 1100px) {
+  .insurance-accepted-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .insurance-accepted-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .insurance-accepted-section {
+    padding: 3.5rem 0;
+  }
+
+  .insurance-accepted-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .insurance-accepted-link {
+    min-height: 96px;
+    padding: 0.85rem 0.5rem;
+  }
+
+  .insurance-accepted-link img {
+    height: 36px;
+  }
+}

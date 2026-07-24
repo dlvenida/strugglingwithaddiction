@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { FaMapMarkerAlt, FaPhone, FaGlobe, FaStar, FaSearch } from 'react-icons/fa'
 import { fetchApi, apiEnabled } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
@@ -420,6 +420,7 @@ function LeadFormModal({ center, onClose }) {
 }
 
 export default function RehabCenters() {
+  const [searchParams] = useSearchParams()
   const [claimCenter, setClaimCenter] = useState(null)
   const [leadCenter, setLeadCenter] = useState(null)
   const [centers, setCenters] = useState(STATIC_CENTERS)
@@ -427,8 +428,13 @@ export default function RehabCenters() {
   const [query, setQuery] = useState('')
   const [stateFilter, setStateFilter] = useState('')
   const [serviceFilter, setServiceFilter] = useState('')
-  const [insuranceFilter, setInsuranceFilter] = useState('')
+  const [insuranceFilter, setInsuranceFilter] = useState(() => searchParams.get('insurance') || '')
   const [insuranceOptions, setInsuranceOptions] = useState([])
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('insurance') || ''
+    setInsuranceFilter(fromUrl)
+  }, [searchParams])
 
   useEffect(() => {
     if (!apiEnabled()) return

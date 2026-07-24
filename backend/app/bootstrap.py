@@ -30,13 +30,18 @@ USA_INSURANCE_SEED = [
     ("Optum", "optum", "/images/insurance/optum.png", 110),
     ("Magellan Health", "magellan-health", "/images/insurance/magellan-health.png", 120),
     ("Beacon Health Options", "beacon-health", "/images/insurance/beacon-health.png", 130),
-    ("Molina Healthcare", "molina", "/images/insurance/molina.png", 140),
-    ("Ambetter", "ambetter", "/images/insurance/ambetter.png", 150),
-    ("Oscar Health", "oscar", "/images/insurance/oscar.png", 160),
-    ("WellCare", "wellcare", "/images/insurance/wellcare.png", 170),
-    ("Centene", "centene", "/images/insurance/centene.png", 180),
-    ("Private Pay", "private-pay", "/images/insurance/private-pay.png", 190),
-    ("Self Pay", "self-pay", "/images/insurance/self-pay.png", 200),
+    ("ComPsych", "compsych", "/images/insurance/compsych.png", 135),
+    ("Health Net", "health-net", "/images/insurance/health-net.png", 138),
+    ("Optima Health", "optima-health", "/images/insurance/optima-health.png", 142),
+    ("MultiPlan", "multiplan", "/images/insurance/multiplan.png", 145),
+    ("AmeriHealth", "amerihealth", "/images/insurance/amerihealth.png", 148),
+    ("Molina Healthcare", "molina", "/images/insurance/molina.png", 150),
+    ("Ambetter", "ambetter", "/images/insurance/ambetter.png", 160),
+    ("Oscar Health", "oscar", "/images/insurance/oscar.png", 170),
+    ("WellCare", "wellcare", "/images/insurance/wellcare.png", 180),
+    ("Centene", "centene", "/images/insurance/centene.png", 190),
+    ("Private Pay", "private-pay", "/images/insurance/private-pay.png", 200),
+    ("Self Pay", "self-pay", "/images/insurance/self-pay.png", 210),
 ]
 
 settings = get_settings()
@@ -313,10 +318,9 @@ def seed_insurance_catalog(db: Session) -> None:
     for name, slug, logo_path, sort_order in USA_INSURANCE_SEED:
         row = existing.get(slug)
         if row:
-            if not row.logo_path:
-                row.logo_path = logo_path
-            if row.sort_order == 0:
-                row.sort_order = sort_order
+            row.name = name
+            row.logo_path = logo_path
+            row.sort_order = sort_order
             continue
         db.add(
             InsuranceCatalog(
