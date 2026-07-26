@@ -128,7 +128,7 @@
 .stat-number {
   font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   font-weight: 700;
-  color: #5FBDF6;
+  color: #ffffff;
   line-height: 1;
 }
 
@@ -419,7 +419,7 @@
   padding: 0.85rem 1.25rem;
   border: 2px solid #e5e7eb;
   border-radius: 4px;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   color: #1a1a2e;
   outline: none;

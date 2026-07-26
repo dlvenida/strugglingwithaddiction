@@ -1,7 +1,7 @@
 .site-footer {
   background: #1a1a2e;
   color: #d1d5db;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
 }
 
 .footer-inner {

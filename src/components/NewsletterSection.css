@@ -38,7 +38,7 @@
   padding: 0.85rem 1.25rem;
   border: 2px solid var(--white);
   border-radius: 4px;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   color: var(--dark);
   background: var(--white);

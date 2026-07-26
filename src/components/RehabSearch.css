@@ -31,7 +31,7 @@
 }
 
 .rehab-search-ai-prompt {
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 1.15rem;
   font-weight: 700;
   color: #1a1a2e;
@@ -100,7 +100,7 @@
   padding: 0.95rem 2.75rem 0.95rem 2.85rem;
   border: 2px solid #e5e7eb;
   border-radius: 12px;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   color: #1a1a2e;
   background: #fafaf8;
@@ -145,7 +145,7 @@
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   background: white;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 0.88rem;
   font-weight: 700;
   color: #374151;
@@ -232,7 +232,7 @@
   padding: 0.75rem 1rem;
   border: 2px solid #e5e7eb;
   border-radius: 10px;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 0.95rem;
   color: #1a1a2e;
   background: #fafaf8;
@@ -299,7 +299,7 @@
 .rehab-search-clear-all {
   background: none;
   border: none;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 0.82rem;
   font-weight: 700;
   color: #8c1126;

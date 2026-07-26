@@ -18,6 +18,9 @@
   --accent-gold: #dda24a;
   --header-height: 72px;
   --transition: 0.3s ease;
+  --font-body: 'Open Sans', Helvetica, Arial, sans-serif;
+  --font-heading: 'PT Serif', Georgia, serif;
+  --font-label: 'PT Sans', 'Open Sans', Helvetica, Arial, sans-serif;
 }
 
 html {
@@ -26,7 +29,7 @@ html {
 }
 
 body {
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   color: var(--dark);
   background: var(--white);
   line-height: 1.75;
@@ -47,7 +50,7 @@ a {
 
 button {
   cursor: pointer;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
 }
 
 /* ── Buttons ─────────────────────────────── */
@@ -58,7 +61,7 @@ button {
   padding: 0.85rem 2rem;
   border: 2px solid transparent;
   border-radius: 4px;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -120,7 +123,8 @@ button {
 }
 
 /* ── Typography ──────────────────────────── */
-h1, h2, h3, h4 {
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
   line-height: 1.2;
   font-weight: 700;
 }
@@ -131,12 +135,19 @@ h3 { font-size: clamp(1.2rem, 2.5vw, 1.5rem); }
 
 .section-label {
   display: inline-block;
+  font-family: var(--font-label);
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.78rem;
   color: var(--brand-blue);
   margin-bottom: 0.6rem;
   font-weight: 700;
+}
+
+input,
+textarea,
+select {
+  font-family: var(--font-body);
 }
 
 .text-center { text-align: center; }
