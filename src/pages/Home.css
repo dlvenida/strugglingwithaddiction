@@ -128,7 +128,7 @@
 .stat-number {
   font-size: clamp(1.8rem, 3.5vw, 2.6rem);
   font-weight: 700;
-  color: #98b8c4;
+  color: #5FBDF6;
   line-height: 1;
 }
 
@@ -213,8 +213,8 @@
 }
 
 .service-card:hover {
-  border-color: #98b8c4;
-  box-shadow: 0 12px 32px rgba(152, 184, 196, 0.15);
+  border-color: #5FBDF6;
+  box-shadow: 0 12px 32px rgba(95, 189, 246, 0.15);
   transform: translateY(-4px);
 }
 
@@ -261,7 +261,7 @@
   left: calc(16.67% + 1.25rem);
   right: calc(16.67% + 1.25rem);
   height: 2px;
-  background: linear-gradient(90deg, #98b8c4, #8c1126);
+  background: linear-gradient(90deg, #5FBDF6, #8c1126);
   opacity: 0.4;
 }
 
@@ -278,7 +278,7 @@
   width: 5rem;
   height: 5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #98b8c4, #6a9aaa);
+  background: linear-gradient(135deg, #5FBDF6, #6a9aaa);
   font-size: 1.5rem;
   font-weight: 700;
   color: white;
@@ -358,7 +358,7 @@
 .testimonial-card blockquote::before {
   content: '\201C';
   font-size: 3rem;
-  color: #98b8c4;
+  color: #5FBDF6;
   line-height: 0;
   vertical-align: -0.6rem;
   margin-right: 0.15rem;
@@ -379,7 +379,7 @@
 
 .testimonial-card figcaption span {
   font-size: 0.82rem;
-  color: #98b8c4;
+  color: #5FBDF6;
   font-style: italic;
 }
 
@@ -427,7 +427,7 @@
 }
 
 .find-help-form input:focus {
-  border-color: #98b8c4;
+  border-color: #5FBDF6;
 }
 
 /* ── Responsive ───────────────────────────── */

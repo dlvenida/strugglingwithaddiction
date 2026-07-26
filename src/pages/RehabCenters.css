@@ -126,7 +126,7 @@
   color: #6b7280;
 }
 
-.rehab-location svg { color: #98b8c4; }
+.rehab-location svg { color: #5FBDF6; }
 
 .rehab-stars {
   display: flex;
@@ -150,8 +150,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(152,184,196,0.15);
-  border: 1px solid #98b8c4;
+  background: rgba(95, 189, 246,0.15);
+  border: 1px solid #5FBDF6;
   color: #4a7a8a;
   font-size: 0.72rem;
   font-weight: 700;
@@ -191,7 +191,7 @@
 }
 
 .rehab-tag {
-  background: rgba(152,184,196,0.12);
+  background: rgba(95, 189, 246,0.12);
   color: #1a1a2e;
   font-size: 0.75rem;
   font-weight: 700;
@@ -199,7 +199,7 @@
   text-transform: uppercase;
   padding: 0.25rem 0.75rem;
   border-radius: 100px;
-  border: 1px solid rgba(152,184,196,0.3);
+  border: 1px solid rgba(95, 189, 246,0.3);
   transition: background 0.25s, border-color 0.25s, transform 0.2s;
 }
 
@@ -238,7 +238,7 @@
   transition: color 0.3s;
 }
 
-.rehab-contact svg { color: #98b8c4; }
+.rehab-contact svg { color: #5FBDF6; }
 .rehab-contact:hover { color: #8c1126; }
 
 .rehab-call-btn {
@@ -358,7 +358,7 @@
 }
 
 .modal-form input:focus,
-.modal-form textarea:focus { border-color: #98b8c4; }
+.modal-form textarea:focus { border-color: #5FBDF6; }
 
 .modal-form textarea { resize: vertical; }
 
@@ -370,7 +370,7 @@
 .modal-success-icon {
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #98b8c4, #6a9aaa);
+  background: linear-gradient(135deg, #5FBDF6, #6a9aaa);
   border-radius: 50%;
   display: flex;
   align-items: center;

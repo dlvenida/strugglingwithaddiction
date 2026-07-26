@@ -233,7 +233,7 @@ export default function RehabCenters() {
       <section className="rehab-hero">
         <div className="rehab-hero-overlay" />
         <div className="container rehab-hero-content">
-          <span className="section-label" style={{ color: '#98b8c4' }}>Find Help Near You</span>
+          <span className="section-label" style={{ color: '#5FBDF6' }}>Find Help Near You</span>
           <h1>Rehab directory</h1>
           <p>
             Every facility below is either verified by our team or awaiting claim by its owner.

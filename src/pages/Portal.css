@@ -85,7 +85,7 @@
 .portal-field input:focus {
   outline: none;
   border-color: var(--brand-blue);
-  box-shadow: 0 0 0 3px rgba(152, 184, 196, 0.25);
+  box-shadow: 0 0 0 3px rgba(95, 189, 246, 0.25);
 }
 
 .portal-signin-actions {
