@@ -50,7 +50,7 @@
   border-radius: 4px;
   background: rgba(255,255,255,0.12);
   color: white;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-body);
   font-size: 1rem;
   outline: none;
   transition: border-color 0.3s, background 0.3s;
@@ -139,7 +139,7 @@
   border: 2px solid #e5e7eb;
   border-radius: 100px;
   padding: 0.48rem 1.32rem;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-label);
   font-size: 0.98rem;
   font-weight: 700;
   color: #6b7280;
@@ -171,7 +171,7 @@
   border: none;
   padding: 0.15rem 0.6rem;
   border-radius: 100px;
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-label);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;

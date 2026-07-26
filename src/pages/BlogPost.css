@@ -186,7 +186,7 @@
 }
 
 .post-author-name {
-  font-family: 'PT Serif', Georgia, serif;
+  font-family: var(--font-label);
   font-size: 1.05rem;
   font-weight: 700;
   color: #1a1a2e;
