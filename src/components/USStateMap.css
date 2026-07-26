@@ -9,7 +9,7 @@
 }
 
 .us-map-state {
-  fill: #2d2654;
+  fill: #5FBDF6;
   stroke: #ffffff;
   stroke-width: 1.2;
   cursor: pointer;
@@ -18,7 +18,7 @@
 }
 
 .us-map-state--inset-source {
-  fill: #2d2654;
+  fill: #5FBDF6;
   opacity: 0.35;
 }
 
@@ -30,7 +30,7 @@
 }
 
 .us-map-inset-box {
-  fill: #2d2654;
+  fill: #5FBDF6;
   stroke: #ffffff;
   stroke-width: 1.2;
   cursor: pointer;
