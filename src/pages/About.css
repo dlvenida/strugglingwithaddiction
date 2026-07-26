@@ -29,6 +29,10 @@
   padding-bottom: 4rem;
 }
 
+.about-hero .section-label {
+  color: #5FBDF6;
+}
+
 .about-hero-content h1 {
   color: white;
   margin: 0.5rem 0 1.25rem;

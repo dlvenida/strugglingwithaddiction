@@ -52,7 +52,7 @@
 
 .footer-socials a:hover {
   color: var(--brand-blue);
-  background-color: rgba(152, 184, 196, 0.1);
+  background-color: rgba(95, 189, 246, 0.1);
 }
 
 /* Explicit brand CTA (anchors use color: inherit globally; keep fill + text locked) */
@@ -80,7 +80,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #98b8c4;
+  color: #5FBDF6;
   margin-bottom: 1rem;
 }
 
@@ -135,7 +135,7 @@
 }
 
 .footer-legal a:hover {
-  color: #98b8c4;
+  color: #5FBDF6;
 }
 
 .footer-legal span {

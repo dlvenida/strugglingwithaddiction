@@ -118,7 +118,7 @@ export default function Blog() {
       <section className="blog-hero">
         <div className="blog-hero-overlay" />
         <div className="container blog-hero-content">
-          <span className="section-label" style={{ color: '#98b8c4' }}>Education &amp; Resources</span>
+          <span className="section-label" style={{ color: '#5FBDF6' }}>Education &amp; Resources</span>
           <h1>The SWA Blog</h1>
           <p>Evidence-based articles, personal stories, and practical guidance for every step of the recovery journey.</p>
           <div className="blog-search-wrap" ref={wrapRef}>

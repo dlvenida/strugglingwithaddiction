@@ -31,7 +31,7 @@ const ProviderLoginRedirect = lazy(() => import('./pages/ProviderLoginRedirect')
 const SuperadminLoginRedirect = lazy(() => import('./pages/SuperadminLoginRedirect'))
 
 function PageLoader() {
-  return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'PT Serif, serif', color: '#98b8c4', fontSize: '1.1rem' }}>Loading…</div>
+  return <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'PT Serif, serif', color: '#5FBDF6', fontSize: '1.1rem' }}>Loading…</div>
 }
 
 export default function App() {

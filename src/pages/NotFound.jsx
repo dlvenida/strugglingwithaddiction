@@ -70,7 +70,7 @@ export default function NotFound() {
         <div className="not-found-hero-overlay" />
         <div className="container not-found-hero-content">
           <p className="not-found-code" aria-hidden="true">404</p>
-          <span className="section-label" style={{ color: '#98b8c4' }}>Page Not Found</span>
+          <span className="section-label" style={{ color: '#5FBDF6' }}>Page Not Found</span>
           <h1>This Page Isn&apos;t Here —<br />But Help Still Is</h1>
           <p>
             The page you&apos;re looking for may have moved, been removed, or the address

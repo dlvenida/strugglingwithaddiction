@@ -178,7 +178,7 @@ export default function Home() {
         <div className="container hero-content">
           <div className="hero-layout">
             <div className="hero-copy">
-              <span className="section-label" style={{ color: '#98b8c4' }}>You Are Not Alone</span>
+              <span className="section-label" style={{ color: '#5FBDF6' }}>You Are Not Alone</span>
               <h1>You don't have to figure this out alone.</h1>
               <p className="hero-sub">
                 Find a licensed treatment center near you, browse by state or by the kind of care you need,

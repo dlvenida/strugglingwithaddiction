@@ -59,7 +59,7 @@
 .blog-search::placeholder { color: rgba(255,255,255,0.5); }
 
 .blog-search:focus {
-  border-color: #98b8c4;
+  border-color: #5FBDF6;
   background: rgba(255,255,255,0.18);
 }
 
@@ -69,7 +69,7 @@
   left: 0;
   right: 0;
   background: #1e2240;
-  border: 1px solid rgba(152, 184, 196, 0.3);
+  border: 1px solid rgba(95, 189, 246, 0.3);
   border-radius: 8px;
   overflow: hidden;
   list-style: none;
@@ -90,7 +90,7 @@
 
 .blog-suggestion-item:hover,
 .blog-suggestion-item.active {
-  background: rgba(152, 184, 196, 0.15);
+  background: rgba(95, 189, 246, 0.15);
 }
 
 .suggestion-type {
@@ -98,7 +98,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #98b8c4;
+  color: #5FBDF6;
   flex-shrink: 0;
   min-width: 3.8rem;
 }
@@ -148,7 +148,7 @@
 }
 
 .cat-pill:hover {
-  border-color: #98b8c4;
+  border-color: #5FBDF6;
   color: #1a1a2e;
 }
 
@@ -176,8 +176,8 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #98b8c4;
-  background: rgba(152, 184, 196, 0.12);
+  color: #5FBDF6;
+  background: rgba(95, 189, 246, 0.12);
   cursor: pointer;
   transition: background 0.3s, color 0.3s;
 }
@@ -243,7 +243,7 @@
 }
 
 .blog-card-img-placeholder {
-  background: linear-gradient(135deg, #98b8c4 0%, #6a9aaa 100%);
+  background: linear-gradient(135deg, #5FBDF6 0%, #6a9aaa 100%);
 }
 
 .blog-card-body {
@@ -256,7 +256,7 @@
 
 .blog-card-date {
   font-size: 0.78rem;
-  color: #98b8c4;
+  color: #5FBDF6;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
