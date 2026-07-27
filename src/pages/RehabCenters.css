@@ -166,25 +166,34 @@
 .rehab-featured-badge {
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  padding: 0.2rem 0.65rem;
+  padding: 0.2rem 0.7rem 0.2rem 0.45rem;
   border-radius: 100px;
   white-space: nowrap;
 }
 
 .rehab-verified-badge {
-  background: rgba(140, 17, 38, 0.08);
-  border: 1px solid rgba(140, 17, 38, 0.35);
-  color: #8c1126;
+  background: rgba(95, 189, 246, 0.12);
+  border: 1px solid #5FBDF6;
+  color: #5FBDF6;
+}
+
+.rehab-verified-badge-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  display: block;
 }
 
 .rehab-featured-badge {
   background: #1a1a2e;
   border: 1px solid #1a1a2e;
   color: #fff;
+  padding: 0.2rem 0.65rem;
 }
 
 .rehab-claim-btn {

@@ -1,11 +1,29 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { FaMapMarkerAlt, FaPhone, FaGlobe, FaStar, FaSearch } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaGlobe, FaStar, FaSearch } from 'react-icons/fa'
 import { fetchApi, apiEnabled } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
 import { rehabLandingPath } from '../lib/rehabLanding'
 import RehabSearch from '../components/RehabSearch'
 import './RehabCenters.css'
+
+function VerifiedBadge() {
+  return (
+    <span className="rehab-verified-badge" title="Verified listing">
+      <svg className="rehab-verified-badge-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+        <path
+          fill="currentColor"
+          d="M10 1.2l1.55 1.12 1.86-.42.72 1.77 1.77.72-.42 1.86L17.6 8.8l-1.12 1.55 1.12 1.55-1.12 1.55.42 1.86-1.77.72-.72 1.77-1.86-.42L10 18.8l-1.55-1.12-1.86.42-.72-1.77-1.77-.72.42-1.86L3.4 11.9l1.12-1.55L3.4 8.8l1.12-1.55-.42-1.86 1.77-.72.72-1.77 1.86.42L10 1.2z"
+        />
+        <path
+          fill="#fff"
+          d="M8.15 10.35l-1.35-1.35-1.05 1.05 2.4 2.4 4.5-4.5-1.05-1.05-3.45 3.45z"
+        />
+      </svg>
+      Verified
+    </span>
+  )
+}
 
 export const STATIC_CENTERS = [
   {
@@ -17,6 +35,7 @@ export const STATIC_CENTERS = [
     address_line: '39000 Bob Hope Drive',
     zip: '92270',
     phone: '1-866-831-5700',
+    contact_email: 'info@hazeldenbettyford.org',
     website: 'https://www.hazeldenbettyford.org',
     image: '/images/rehab/hazelden-betty-ford.webp',
     gallery_urls: ['/images/rehab/hazelden-betty-ford.webp', '/images/rehab/caron-treatment-centers.webp', '/images/rehab/sierra-tucson.webp'],
@@ -56,6 +75,7 @@ export const STATIC_CENTERS = [
     address_line: '243 N Galen Hall Road',
     zip: '19565',
     phone: '1-800-854-6023',
+    contact_email: 'caron@example.com',
     website: 'https://www.caron.org',
     image: '/images/rehab/caron-treatment-centers.webp',
     gallery_urls: ['/images/rehab/caron-treatment-centers.webp', '/images/rehab/hazelden-betty-ford.webp', '/images/rehab/the-ranch-tennessee.webp'],
@@ -546,7 +566,7 @@ export default function RehabCenters() {
                     <div className="rehab-name-row">
                       <h2>{landingPath ? <Link to={landingPath}>{center.name}</Link> : center.name}</h2>
                       {center.featured && <span className="rehab-featured-badge">Featured</span>}
-                      {center.verified_badge && <span className="rehab-verified-badge">Verified</span>}
+                      {center.verified_badge && <VerifiedBadge />}
                       {center.claimed && <span className="rehab-claimed-badge">✓ Claimed</span>}
                     </div>
                     <div className="rehab-card-meta">
@@ -574,18 +594,31 @@ export default function RehabCenters() {
                 </div>
                 <p className="rehab-description">{center.description}</p>
                 <div className="rehab-card-footer">
-                  {center.claimed && center.phone ? (
+                  {center.claimed && (center.phone || center.contact_email) ? (
                     <>
                       <div className="rehab-card-contacts">
-                        <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="rehab-contact"><FaPhone aria-hidden="true" /> {center.phone}</a>
+                        {center.phone && (
+                          <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="rehab-contact">
+                            <FaPhone aria-hidden="true" /> {center.phone}
+                          </a>
+                        )}
+                        {center.contact_email && (
+                          <a href={`mailto:${center.contact_email}`} className="rehab-contact">
+                            <FaEnvelope aria-hidden="true" /> {center.contact_email}
+                          </a>
+                        )}
                         {center.website && (
-                          <a href={center.website} target="_blank" rel="noopener noreferrer" className="rehab-contact"><FaGlobe aria-hidden="true" /> Visit Website</a>
+                          <a href={center.website} target="_blank" rel="noopener noreferrer" className="rehab-contact">
+                            <FaGlobe aria-hidden="true" /> Visit Website
+                          </a>
                         )}
                       </div>
                       <div className="rehab-card-actions">
                         <button type="button" className="btn rehab-action-btn" onClick={() => setLeadCenter(center)}>Send Inquiry</button>
                         {landingPath && <Link to={landingPath} className="btn rehab-action-btn rehab-action-btn--primary">View</Link>}
-                        <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="btn rehab-action-btn">Call Now</a>
+                        {center.phone && (
+                          <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="btn rehab-action-btn">Call Now</a>
+                        )}
                       </div>
                     </>
                   ) : (
