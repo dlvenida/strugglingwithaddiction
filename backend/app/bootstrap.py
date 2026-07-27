@@ -67,8 +67,6 @@ REHAB_SEED = [
         "image_key": "/images/rehab/hazelden-betty-ford.webp",
         "gallery_keys": [
             "/images/rehab/hazelden-betty-ford.webp",
-            "/images/rehab/caron-treatment-centers.webp",
-            "/images/rehab/sierra-tucson.webp",
         ],
         "specialties": ["Inpatient Residential", "Medical Detox", "Dual Diagnosis", "Telehealth"],
         "levels_of_care": ["Detox", "Residential", "IOP", "Outpatient"],
@@ -106,8 +104,6 @@ REHAB_SEED = [
         "image_key": "/images/rehab/caron-treatment-centers.webp",
         "gallery_keys": [
             "/images/rehab/caron-treatment-centers.webp",
-            "/images/rehab/hazelden-betty-ford.webp",
-            "/images/rehab/the-ranch-tennessee.webp",
         ],
         "specialties": ["Medical Detox", "Inpatient", "Dual Diagnosis", "Executive Program"],
         "levels_of_care": ["Detox", "Residential", "PHP", "IOP"],
@@ -306,7 +302,8 @@ def seed_rehab_centers(db: Session) -> None:
         ):
             if item.get(field) is not None and not getattr(center, field, None):
                 setattr(center, field, item[field])
-        if item.get("gallery_keys") and not (center.gallery_keys or []):
+        # Keep claimed demo galleries aligned to this listing's own images only.
+        if item.get("gallery_keys") is not None and item.get("claimed"):
             center.gallery_keys = item["gallery_keys"]
         # Keep demo placeholder insurance lists aligned with the USA catalog.
         old_demo = {"most major insurance", "private pay", "blue cross"}

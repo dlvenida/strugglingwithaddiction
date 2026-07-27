@@ -266,8 +266,7 @@ export default function RehabCenterDetail() {
   const address = center.address_line
     ? `${center.address_line}, ${center.city || ''}, ${center.state || ''} ${center.zip || ''}`.replace(/\s+/g, ' ').trim()
     : center.location
-  const staticMatch = STATIC_CENTERS.find(item => item.id === center.id || item.slug === center.slug || item.name === center.name)
-  const gallery = [center.image, ...(center.gallery_urls?.length ? center.gallery_urls : (staticMatch?.gallery_urls || []))].filter(Boolean)
+  const gallery = [center.image, ...(center.gallery_urls || [])].filter(Boolean)
     .filter((url, index, all) => all.indexOf(url) === index)
   const embedUrl = mapsEmbedUrl(center.google_maps_url, address)
 
