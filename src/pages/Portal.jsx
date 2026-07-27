@@ -51,13 +51,13 @@ export default function Portal() {
   return (
     <main className="portal-page">
       <section className="portal-hero">
+        <div className="portal-hero-overlay" aria-hidden="true" />
         <div className="container portal-hero-content">
           <span className="section-label">Partner & Client Access</span>
           <h1>Portal</h1>
           <p>
             A central place for treatment centers, partners, and contributors to manage
-            listings, content, and account resources. This page is a preview — full
-            sign-in and dashboard features are coming soon.
+            listings, content, and account resources.
           </p>
         </div>
       </section>
