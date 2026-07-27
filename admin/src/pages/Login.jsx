@@ -1,23 +1,42 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
-import Button from '../components/ui/Button'
-import Card from '../components/ui/Card'
-import Eyebrow from '../components/ui/Eyebrow'
+import { getPublicSiteUrl } from '../lib/publicSite'
+import './Login.css'
+
+const HERO_IMAGES = [
+  '/images/Mindfulness-in-Recovery-Cultivating-Inner-Peace-After-Addiction_2426878099.webp',
+  '/images/man-8598773_1280.webp',
+  '/images/Breaking-the-Cycle-Overcoming-the-Worst-Relapse-Triggers-in-Recovery_1182413176.webp',
+  '/images/The-Science-of-Healing-Evidence-Based-Addiction-Treatment_2140317261.webp',
+]
+
+function publicPath(path) {
+  const base = getPublicSiteUrl()
+  return base ? `${base}${path}` : path
+}
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, logout } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [apiOk, setApiOk] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [slide, setSlide] = useState(0)
+  const homeUrl = publicPath('/')
+  const rehabListUrl = publicPath('/rehab-centers')
 
   useEffect(() => {
     fetch('/health')
       .then(r => setApiOk(r.ok))
       .catch(() => setApiOk(false))
+  }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => setSlide(s => (s + 1) % HERO_IMAGES.length), 7000)
+    return () => clearInterval(t)
   }, [])
 
   async function handleSubmit(e) {
@@ -26,7 +45,12 @@ export default function Login() {
     setSubmitting(true)
     try {
       const role = await login(email, password)
-      navigate(role === 'admin' ? '/admin' : role === 'editor' ? '/editor' : '/client')
+      if (role === 'admin') {
+        logout()
+        setError('Platform administrators must sign in at /swa-login/')
+        return
+      }
+      navigate(role === 'editor' ? '/editor' : '/client')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -35,35 +59,98 @@ export default function Login() {
   }
 
   return (
-    <div className="auth-page">
-      <Card className="auth-card">
-        <Eyebrow>Sign in</Eyebrow>
-        <h1 className="page-title" style={{ marginTop: 8 }}>SWA Studio.</h1>
-        {apiOk === false && (
-          <p className="auth-status err">API offline. Start Postgres and uvicorn on port 8000.</p>
-        )}
-        {apiOk === true && <p className="auth-status ok">Connected.</p>}
-        {error && <p className="error">{error}</p>}
-        <form onSubmit={handleSubmit} className="form-stack">
-          <label>Email</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" />
-          <label>Password</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" />
-          <div className="form-actions">
-            <Button type="submit" variant="primary" className="btn-block" disabled={submitting || apiOk === false}>
-              {submitting ? 'Signing in…' : 'Continue'}
-            </Button>
-          </div>
-        </form>
-        <p className="muted" style={{ marginTop: 16, fontSize: 13, lineHeight: 1.5 }}>
-          Production admin: use the email set in Railway <code>ADMIN_BOOTSTRAP_EMAIL</code>, or{' '}
-          <code>pj@redbear.tv</code> with the import password from your deploy docs.
-        </p>
-        <p className="muted" style={{ marginTop: 20, textAlign: 'center' }}>
-          <Link to="/register">Partner registration</Link>
-        </p>
-      </Card>
-      <footer className="studio-footer studio-footer-auth">Developed by RedbearTV Dev Team</footer>
+    <div className="provider-login">
+      <div className="provider-login-bg" aria-hidden="true">
+        {HERO_IMAGES.map((src, i) => (
+          <div
+            key={src}
+            className={`provider-login-slide${i === slide ? ' is-active' : ''}`}
+            style={{ backgroundImage: `url(${src})` }}
+          />
+        ))}
+        <div className="provider-login-overlay" />
+        <div className="provider-login-shimmer" />
+      </div>
+
+      <div className="provider-login-inner">
+        <nav className="provider-login-back" aria-label="Site navigation">
+          <a href={homeUrl}>← Home</a>
+          <span className="provider-login-sep" aria-hidden="true">·</span>
+          <a href={rehabListUrl}>Rehab centers</a>
+        </nav>
+
+        <div className="provider-login-brand">
+          <a href={homeUrl} className="provider-login-logo-link">
+            <img
+              className="provider-login-logo"
+              src="/images/SWA-logo-web-white-small_vSE-1.webp"
+              alt="Struggling With Addiction"
+            />
+          </a>
+          <span className="provider-login-brand-text">Provider platform</span>
+        </div>
+
+        <div className="provider-login-card">
+          <p className="eyebrow">SWA Studio</p>
+          <h1 className="provider-login-title">Welcome back.</h1>
+          <p className="provider-login-lead">
+            Sign in to manage your rehab listing, leads, and upgrades.
+          </p>
+
+          {apiOk === false && (
+            <p className="provider-login-status err">
+              API offline. Start Postgres and uvicorn on port 8000.
+            </p>
+          )}
+          {apiOk === true && (
+            <p className="provider-login-status ok">Connected to platform.</p>
+          )}
+          {error && <p className="provider-login-error">{error}</p>}
+
+          <form onSubmit={handleSubmit} className="provider-login-form">
+            <label htmlFor="provider-email">Email</label>
+            <input
+              id="provider-email"
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+            <label htmlFor="provider-password">Password</label>
+            <input
+              id="provider-password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+            <div className="provider-login-actions">
+              <button
+                type="submit"
+                className="provider-login-submit"
+                disabled={submitting || apiOk === false}
+              >
+                {submitting ? 'Signing in…' : 'Sign in'}
+              </button>
+            </div>
+          </form>
+
+          <p className="provider-login-links">
+            <Link to="/register">Partner registration</Link>
+            <span className="provider-login-sep">·</span>
+            <Link to="/reset-password">Forgot password?</Link>
+          </p>
+          <p className="provider-login-links provider-login-links-site">
+            <a href={homeUrl}>Back to home</a>
+            <span className="provider-login-sep">·</span>
+            <a href={rehabListUrl}>Browse rehab centers</a>
+          </p>
+        </div>
+      </div>
+
+      <footer className="provider-login-footer">Developed by RedbearTV Dev Team</footer>
     </div>
   )
 }

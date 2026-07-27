@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "provider": "auto",
+    "email_from": null,
+    "postal_address": null,
+    "site_name": "Struggling With Addiction",
+    "logo_url": null,
+    "resend_api_key": null,
+    "smtp_host": null,
+    "smtp_port": null,
+    "smtp_user": null,
+    "smtp_password": null,
+    "smtp_use_tls": true,
+    "social_facebook": null,
+    "social_twitter": null,
+    "social_youtube": null,
+    "social_instagram": null,
+    "social_linkedin": null,
+    "created_at": "2026-07-24T06:08:30.159564+00:00",
+    "updated_at": "2026-07-24T06:08:30.159564+00:00"
+  }
+]

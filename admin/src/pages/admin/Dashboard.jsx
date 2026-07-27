@@ -122,12 +122,12 @@ export default function AdminDashboard() {
         <div className="feature-banner-inner">
           <div>
             <Eyebrow>Studio · partner</Eyebrow>
-            <h2 className="hero-title">Listings that convert.</h2>
-            <p className="hero-lead">
+            <h2 className="feature-banner-title">Listings that convert</h2>
+            <p className="feature-banner-lead">
               Approve claims and activate memberships so centers show contact details on the public site.
             </p>
           </div>
-          <Button variant="primary" size="lg" as={Link} to="/admin/billing">Billing</Button>
+          <Button variant="primary" as={Link} to="/admin/billing">Billing</Button>
         </div>
       </Card>
     </div>

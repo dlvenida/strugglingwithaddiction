@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
 import Shell from './Shell'
 import { api } from '../api'
+import { useAuth } from '../auth'
 
 export function AdminLayout({ children }) {
   const [pendingClaims, setPendingClaims] = useState(0)
@@ -17,5 +19,30 @@ export function EditorLayout({ children }) {
 }
 
 export function ClientLayout({ children }) {
+  const { user } = useAuth()
+  const location = useLocation()
+  const [subscription, setSubscription] = useState(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    if (user?.role !== 'client') {
+      setLoaded(true)
+      return
+    }
+    api('/api/billing/subscription')
+      .then(setSubscription)
+      // Do not lock the client out on a transient API failure.
+      .catch(() => setSubscription({ status: 'unknown' }))
+      .finally(() => setLoaded(true))
+  }, [user?.role])
+
+  const inactive = user?.role === 'client'
+    && loaded
+    && !['active', 'trialing', 'past_due', 'unknown'].includes(subscription?.status)
+
+  if (inactive && location.pathname !== '/client/billing') {
+    return <Navigate to="/client/billing" replace />
+  }
+
   return <Shell>{children}</Shell>
 }

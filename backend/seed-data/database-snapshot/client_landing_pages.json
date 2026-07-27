@@ -1,0 +1,14 @@
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "headline": "Hazelden Provider",
+    "about_html": "",
+    "hero_image_key": null,
+    "is_published": false,
+    "meta_title": null,
+    "meta_description": null,
+    "created_at": "2026-07-24T05:32:55.888757+00:00",
+    "updated_at": "2026-07-24T05:32:55.888757+00:00"
+  }
+]

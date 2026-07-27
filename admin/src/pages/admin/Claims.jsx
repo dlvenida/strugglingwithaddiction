@@ -30,7 +30,7 @@ export default function AdminClaims() {
       body: JSON.stringify({
         status,
         admin_notes: notes[id] || '',
-        create_client_user: status === 'approved',
+        create_client_user: status === 'certified' || status === 'approved',
         client_password: passwords[id] || 'TempPass123!',
       }),
     })
@@ -38,10 +38,10 @@ export default function AdminClaims() {
     loadClaimed()
   }
 
-  const badgeTone = s => (s === 'approved' ? 'ok' : s === 'rejected' ? 'err' : 'warn')
+  const badgeTone = s => (s === 'approved' || s === 'certified' ? 'ok' : s === 'rejected' ? 'err' : 'warn')
 
   const queueClaims = claims.filter(c => c.status === 'pending' || c.status === 'under_review')
-  const historyClaims = claims.filter(c => c.status === 'approved' || c.status === 'rejected')
+  const historyClaims = claims.filter(c => ['approved', 'rejected', 'certified', 'abandoned'].includes(c.status))
   const visibleClaims = tab === 'queue' ? queueClaims : tab === 'history' ? historyClaims : []
 
   return (
@@ -49,11 +49,7 @@ export default function AdminClaims() {
       <header className="page-header">
         <h1 className="page-title">Claims.</h1>
         <p className="page-sub">
-          {tab === 'claimed'
-            ? `${claimedClients.length} claimed center${claimedClients.length === 1 ? '' : 's'}`
-            : tab === 'queue'
-              ? `${queueClaims.length} awaiting review`
-              : `${historyClaims.length} reviewed`}
+          Verify rehab certifications here. Ownership is granted after Stripe payment — not on verify.
         </p>
       </header>
 
@@ -124,38 +120,39 @@ export default function AdminClaims() {
               <div>
                 <strong style={{ fontSize: 'var(--text-sm)' }}>{c.ticket_number}</strong>
                 <span style={{ marginLeft: 8 }}><Badge tone={badgeTone(c.status)}>{c.status}</Badge></span>
+                {c.email_domain_matched && <span style={{ marginLeft: 8 }}><Badge tone="ok">email domain match</Badge></span>}
                 <p className="claim-meta">{c.center_name}</p>
                 <p className="claim-meta">{c.full_name} · {c.work_email}</p>
                 {c.phone && <p className="claim-meta">{c.phone}</p>}
                 <p className="muted" style={{ marginTop: 4 }}>{c.affiliation_text}</p>
+                {c.business_license_url && (
+                  <p style={{ marginTop: 8 }}>
+                    <a href={c.business_license_url} target="_blank" rel="noreferrer">View certification upload</a>
+                  </p>
+                )}
                 {c.admin_notes && <p className="muted" style={{ marginTop: 8 }}>Notes: {c.admin_notes}</p>}
                 {c.reviewed_at && <p className="muted" style={{ marginTop: 4 }}>Reviewed {formatDate(c.reviewed_at)}</p>}
               </div>
             </div>
-            {c.status === 'pending' && (
+            {(c.status === 'pending' || c.status === 'under_review') && (
               <>
                 <label>Notes</label>
                 <textarea rows={2} value={notes[c.id] || ''} onChange={e => setNotes(n => ({ ...n, [c.id]: e.target.value }))} />
-                <label>Temp password</label>
+                <label>Temp password (if account missing)</label>
                 <input value={passwords[c.id] || ''} onChange={e => setPasswords(p => ({ ...p, [c.id]: e.target.value }))} placeholder="TempPass123!" />
                 <div className="form-actions form-actions-tight">
-                  <button type="button" className="btn btn-primary btn-sm" onClick={() => review(c.id, 'approved')}>Approve</button>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => review(c.id, 'certified')}>
+                    Verify certification
+                  </button>
                   <button type="button" className="btn btn-ghost btn-sm" onClick={() => review(c.id, 'rejected')}>Reject</button>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => review(c.id, 'under_review')}>Review</button>
+                  {c.status === 'pending' && (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => review(c.id, 'under_review')}>Mark under review</button>
+                  )}
                 </div>
               </>
             )}
-            {c.status === 'under_review' && (
-              <>
-                <label>Notes</label>
-                <textarea rows={2} value={notes[c.id] || ''} onChange={e => setNotes(n => ({ ...n, [c.id]: e.target.value }))} />
-                <label>Temp password</label>
-                <input value={passwords[c.id] || ''} onChange={e => setPasswords(p => ({ ...p, [c.id]: e.target.value }))} placeholder="TempPass123!" />
-                <div className="form-actions form-actions-tight">
-                  <button type="button" className="btn btn-primary btn-sm" onClick={() => review(c.id, 'approved')}>Approve</button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => review(c.id, 'rejected')}>Reject</button>
-                </div>
-              </>
+            {c.status === 'certified' && (
+              <p className="muted">Waiting for Stripe payment to grant the claim.</p>
             )}
           </div>
         ))

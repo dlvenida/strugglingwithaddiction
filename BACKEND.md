@@ -26,7 +26,31 @@ Default admin (created on first boot):
 - Email: `admin@example.com`
 - Password: `changeme123`
 
-### 3. Seed blog content
+### 3. Load shared database snapshot (recommended)
+
+Loads posts, rehab centers, insurance catalog, users, and subscriptions from
+`backend/seed-data/database-snapshot/` (committed for local use):
+
+```bash
+./scripts/load-local-database.sh
+```
+
+Or manually after Postgres is up:
+
+```bash
+cd backend && source .venv/bin/activate
+export DATABASE_URL=postgresql://swa:swa_dev_password@localhost:5433/swa
+python scripts/import_database_snapshot.py
+```
+
+To refresh the snapshot from your local DB (maintainers):
+
+```bash
+cd backend && source .venv/bin/activate
+python scripts/export_database_snapshot.py
+```
+
+### 3b. Seed blog content only (fallback)
 
 ```bash
 # Optional: refresh posts from WordPress

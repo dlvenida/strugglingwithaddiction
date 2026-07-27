@@ -26,7 +26,7 @@ export function IconInbox(props) {
 export function IconCard(props) {
   return <Icon {...props}><path {...stroke} d="M3 7h14v10H3V7zm0 3h14" /></Icon>
 }
-export function IconScrape(props) {
+export function IconImport(props) {
   return <Icon {...props}><path {...stroke} d="M4 4h12v12H4V4zm3 3h6M7 10h6M7 13h4" /></Icon>
 }
 export function IconSettings(props) {
@@ -47,4 +47,7 @@ export function IconExternalLink(props) {
       <path {...stroke} d="M11 3h6v6M9 11l8-8M17 11v6H5V5h6" />
     </Icon>
   )
+}
+export function IconChart(props) {
+  return <Icon {...props}><path {...stroke} d="M3 17V9M8 17V5M13 17v-6M18 17V7" /></Icon>
 }

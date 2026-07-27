@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
+import re
 from typing import Annotated
-import json
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.rehab_helpers import center_to_public
@@ -16,10 +16,7 @@ from app.models.rehab import (
     RehabCenterClaim,
     ListingStatus,
     CenterSource,
-    ScrapeJob,
-    ScrapeJobStatus,
 )
-from app.models.scrape_saved import ScrapeSavedItem
 from app.models.user import User, UserRole
 from app.schemas.rehab import (
     ClaimAdmin,
@@ -28,34 +25,71 @@ from app.schemas.rehab import (
     ClaimOut,
     ClaimReview,
     ClaimStatusPublic,
+    CenterReviewsOut,
+    ReviewItem,
     RehabCenterAdmin,
     RehabCenterCreate,
     RehabCenterPublic,
     RehabCenterUpdate,
     RehabDirectoryStats,
-    ScrapeJobOut,
-    ScrapeRequest,
-    ScrapeResultItem,
-    ScrapeSavedOut,
-    ScrapeSettingsOut,
-    ScrapeSettingsUpdate,
 )
+from app.config import get_settings
+from app.services.email import send_email
+from app.services.google_reviews import fetch_google_reviews, normalize_manual_testimonials
 from app.services.tickets import generate_claim_ticket
-from app.services.scrape_settings import get_scrape_settings, mask_api_key
-from app.services.scraper import run_scrape_job, result_to_center_fields
 
 router = APIRouter(tags=["rehab"])
+settings = get_settings()
+
+
+def _landing_segment(value: str | None) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", (value or "").lower()).strip("-")
 
 
 @router.get("/api/rehab-centers", response_model=list[RehabCenterPublic])
-def list_centers(db: Annotated[Session, Depends(get_db)]):
-    centers = (
+def list_centers(
+    db: Annotated[Session, Depends(get_db)],
+    state: str | None = Query(default=None, max_length=100),
+    city: str | None = Query(default=None, max_length=100),
+):
+    query = db.query(RehabCenter).filter(RehabCenter.listing_status == ListingStatus.published, RehabCenter.deleted_at.is_(None))
+    if state:
+        query = query.filter(RehabCenter.state.ilike(state.strip()))
+    if city:
+        query = query.filter(RehabCenter.city.ilike(city.strip()))
+    centers = query.order_by(RehabCenter.featured_until.desc().nullslast(), RehabCenter.name).all()
+    return [center_to_public(db, c) for c in centers]
+
+
+@router.get("/api/rehab-centers/landing/{state}/{city}/{facility}", response_model=RehabCenterPublic)
+def get_claimed_center_landing(
+    state: str,
+    city: str,
+    facility: str,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Resolve canonical location URLs only for subscribed, claimed centers."""
+    candidates = (
         db.query(RehabCenter)
         .filter(RehabCenter.listing_status == ListingStatus.published, RehabCenter.deleted_at.is_(None))
-        .order_by(RehabCenter.name)
         .all()
     )
-    return [center_to_public(db, c) for c in centers]
+    center = next(
+        (
+            item
+            for item in candidates
+            if _landing_segment(item.state) == state
+            and _landing_segment(item.city) == city
+            and _landing_segment(item.name) == facility
+        ),
+        None,
+    )
+    if not center:
+        raise HTTPException(status_code=404, detail="Claimed center landing page not found")
+    public = center_to_public(db, center)
+    if not public.claimed:
+        raise HTTPException(status_code=404, detail="Claimed center landing page not found")
+    return public
 
 
 @router.get("/api/rehab-centers/stats", response_model=RehabDirectoryStats)
@@ -82,6 +116,49 @@ def get_center(slug: str, db: Annotated[Session, Depends(get_db)]):
     if not center:
         raise HTTPException(status_code=404, detail="Center not found")
     return center_to_public(db, center)
+
+
+@router.get("/api/rehab-centers/{slug}/reviews", response_model=CenterReviewsOut)
+def get_center_reviews(slug: str, db: Annotated[Session, Depends(get_db)]):
+    """Return Google Place reviews when configured, otherwise listing testimonials."""
+    center = db.query(RehabCenter).filter(
+        RehabCenter.slug == slug,
+        RehabCenter.listing_status == ListingStatus.published,
+        RehabCenter.deleted_at.is_(None),
+    ).first()
+    if not center:
+        raise HTTPException(status_code=404, detail="Center not found")
+
+    public = center_to_public(db, center)
+    address = ", ".join(
+        part for part in [center.address_line, center.city, center.state, center.zip] if part
+    ) or public.location
+
+    google = fetch_google_reviews(
+        name=center.name,
+        address=address,
+        google_reviews_url=center.google_reviews_url,
+        google_maps_url=center.google_maps_url,
+    )
+    if google and google.get("reviews"):
+        return CenterReviewsOut(
+            source="google",
+            rating=google.get("rating") if google.get("rating") is not None else public.rating,
+            user_ratings_total=google.get("user_ratings_total"),
+            google_maps_url=google.get("google_maps_url") or public.google_maps_url,
+            google_reviews_url=public.google_reviews_url or google.get("google_maps_url"),
+            reviews=[ReviewItem(**item) for item in google["reviews"]],
+        )
+
+    manual = normalize_manual_testimonials(public.testimonials, default_rating=public.rating)
+    return CenterReviewsOut(
+        source="manual",
+        rating=public.rating,
+        user_ratings_total=len(manual) or None,
+        google_maps_url=public.google_maps_url,
+        google_reviews_url=public.google_reviews_url,
+        reviews=[ReviewItem(**item) for item in manual],
+    )
 
 
 @router.post("/api/rehab/claims", response_model=ClaimOut)
@@ -127,10 +204,12 @@ def claim_status(ticket: str, db: Annotated[Session, Depends(get_db)]):
     if not claim:
         raise HTTPException(status_code=404, detail="Ticket not found")
     messages = {
-        ClaimStatus.pending: "Your claim is pending review.",
-        ClaimStatus.under_review: "Your claim is under review.",
-        ClaimStatus.approved: "Approved! Register and complete membership to activate your listing.",
+        ClaimStatus.pending: "Upload your rehab certification to continue.",
+        ClaimStatus.under_review: "Your certification is under review.",
+        ClaimStatus.certified: "Verified — subscribe ($9.99/mo or $99/yr) to claim your listing.",
+        ClaimStatus.approved: "Claimed and active. Log in to manage your listing.",
         ClaimStatus.rejected: "Your claim was not approved. Contact support for details.",
+        ClaimStatus.abandoned: "This claim expired. Start again from the listing page.",
     }
     return ClaimStatusPublic(
         ticket_number=claim.ticket_number,
@@ -139,6 +218,9 @@ def claim_status(ticket: str, db: Annotated[Session, Depends(get_db)]):
         submitted_at=claim.created_at,
         reviewed_at=claim.reviewed_at,
         message=messages.get(claim.status, ""),
+        certification_uploaded=bool(claim.business_license_url),
+        email_domain_matched=bool(claim.email_domain_matched),
+        phone_verified=bool(claim.phone_verified_at),
     )
 
 
@@ -244,6 +326,10 @@ def list_claims(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
             phone=c.phone,
             affiliation_text=c.affiliation_text,
             facility_role=c.facility_role,
+            business_license_url=c.business_license_url,
+            proof_of_affiliation_url=c.proof_of_affiliation_url,
+            email_domain_matched=bool(c.email_domain_matched),
+            cert_verified_at=c.cert_verified_at,
             admin_notes=c.admin_notes,
             created_at=c.created_at,
             reviewed_at=c.reviewed_at,
@@ -302,27 +388,100 @@ def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotat
     claim.reviewed_by_id = admin.id
     claim.reviewed_at = datetime.now(timezone.utc)
     center = claim.center
-    if body.status == ClaimStatus.approved:
-        center.claimed = True
-        if body.create_client_user and body.client_password:
-            email = claim.work_email.lower()
-            user = db.query(User).filter(User.email == email).first()
-            if not user:
-                user = User(
-                    email=email,
-                    password_hash=hash_password(body.client_password),
-                    role=UserRole.client,
-                    is_active=False,
-                )
-                db.add(user)
-                db.flush()
-                db.add(UserProfile(user_id=user.id, display_name=claim.full_name, slug=f"center-{center.id}-{user.id}"))
+    now = datetime.now(timezone.utc)
+
+    def ensure_client_user() -> User | None:
+        email = claim.work_email.lower()
+        user = db.query(User).filter(User.email == email).first()
+        if not user and body.create_client_user and body.client_password:
+            user = User(
+                email=email,
+                password_hash=hash_password(body.client_password),
+                role=UserRole.client,
+                is_active=False,
+            )
+            db.add(user)
+            db.flush()
+            db.add(UserProfile(user_id=user.id, display_name=claim.full_name, slug=f"center-{center.id}-{user.id}"))
+        if user:
             center.owner_user_id = user.id
             claim.submitter_user_id = user.id
+        return user
+
+    if body.status == ClaimStatus.certified:
+        if not claim.business_license_url:
+            raise HTTPException(status_code=400, detail="No certification uploaded yet")
+        if not claim.email_domain_matched:
+            raise HTTPException(status_code=400, detail="Claimant work email does not match the center website domain")
+        if not claim.phone_verified_at:
+            raise HTTPException(status_code=400, detail="Facility phone callback must be verified before certification approval")
+        claim.cert_verified_at = now
+        center.cert_verified_at = now
+        ensure_client_user()
+        # Ownership reserved but listing not claimed until Stripe payment
+        center.claimed = False
+        center.contact_visible = False
+    elif body.status == ClaimStatus.approved:
+        # Legacy path — prefer payment webhook; still allow admin force-approve
+        ensure_client_user()
+        center.claimed = True
+        center.contact_visible = True
+        if claim.cert_verified_at is None:
+            claim.cert_verified_at = now
+            center.cert_verified_at = now
     elif body.status == ClaimStatus.rejected:
         pass
     db.commit()
     db.refresh(claim)
+
+    claim_url = f"{settings.public_site_url}/claim-status/{claim.ticket_number}"
+    if body.status == ClaimStatus.certified and claim.work_email:
+        send_email(
+            db,
+            to_email=claim.work_email,
+            template_key="claim_certified",
+            context={
+                "name": claim.full_name,
+                "center_name": center.name,
+                "ticket": claim.ticket_number,
+                "claim_url": claim_url,
+                "billing_url": f"{settings.admin_site_url}/client/billing",
+            },
+            user_id=claim.submitter_user_id,
+            rehab_center_id=center.id,
+        )
+    elif body.status == ClaimStatus.approved and claim.work_email:
+        send_email(
+            db,
+            to_email=claim.work_email,
+            template_key="welcome",
+            context={
+                "name": claim.full_name,
+                "center_name": center.name,
+                "login_url": f"{settings.admin_site_url}/login",
+                "billing_url": f"{settings.admin_site_url}/client/billing",
+                "receipt_url": f"{settings.admin_site_url}/client/billing",
+                "support_email": settings.email_from,
+            },
+            user_id=claim.submitter_user_id,
+            rehab_center_id=center.id,
+        )
+    elif body.status == ClaimStatus.rejected and claim.work_email:
+        send_email(
+            db,
+            to_email=claim.work_email,
+            template_key="claim_rejected",
+            context={
+                "name": claim.full_name,
+                "center_name": center.name,
+                "ticket": claim.ticket_number,
+                "admin_notes": (claim.admin_notes or body.admin_notes or "Please contact support if you believe this was in error."),
+                "support_email": settings.email_from,
+            },
+            user_id=claim.submitter_user_id,
+            rehab_center_id=center.id,
+        )
+
     return ClaimAdmin(
         id=claim.id,
         ticket_number=claim.ticket_number,
@@ -335,201 +494,14 @@ def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotat
         phone=claim.phone,
         affiliation_text=claim.affiliation_text,
         facility_role=claim.facility_role,
+        business_license_url=claim.business_license_url,
+        proof_of_affiliation_url=claim.proof_of_affiliation_url,
+        email_domain_matched=bool(claim.email_domain_matched),
+        cert_verified_at=claim.cert_verified_at,
         admin_notes=claim.admin_notes,
         created_at=claim.created_at,
         reviewed_at=claim.reviewed_at,
     )
 
 
-@router.get("/api/client/my-center", response_model=RehabCenterAdmin | None)
-def client_my_center(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
-    center = db.query(RehabCenter).filter(RehabCenter.owner_user_id == user.id).first()
-    if not center:
-        return None
-    return RehabCenterAdmin.model_validate(center)
-
-
-@router.post("/api/admin/scrape", response_model=ScrapeJobOut, status_code=202)
-def trigger_scrape(
-    body: ScrapeRequest,
-    background_tasks: BackgroundTasks,
-    admin: AdminUser,
-    db: Annotated[Session, Depends(get_db)],
-):
-    query = body.url or body.query or f"rehab centers in {body.state}"
-    job = ScrapeJob(
-        query_or_url=query,
-        state=body.state,
-        status=ScrapeJobStatus.pending,
-        created_by_id=admin.id,
-    )
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    background_tasks.add_task(run_scrape_job, job.id, body.offset)
-    return _scrape_job_out(job)
-
-
-def _parse_job_results(job: ScrapeJob) -> list[ScrapeResultItem]:
-    if not job.results_json:
-        return []
-    try:
-        raw = json.loads(job.results_json)
-        return [ScrapeResultItem.model_validate(item) for item in raw]
-    except Exception:
-        return []
-
-
-def _scrape_job_out(job: ScrapeJob) -> ScrapeJobOut:
-    return ScrapeJobOut(
-        id=job.id,
-        status=job.status,
-        query_or_url=job.query_or_url,
-        state=job.state,
-        results_count=job.results_count,
-        results=_parse_job_results(job),
-        error_log=job.error_log,
-        created_at=job.created_at,
-    )
-
-
-@router.get("/api/admin/scrape/{job_id}", response_model=ScrapeJobOut)
-def get_scrape_job(job_id: int, _: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return _scrape_job_out(job)
-
-
-def _unique_slug(db: Session, base_slug: str) -> str:
-    slug = base_slug
-    n = 1
-    while db.query(RehabCenter).filter(RehabCenter.slug == slug).first():
-        slug = f"{base_slug}-{n}"
-        n += 1
-    return slug
-
-
-def _create_center_from_item(db: Session, item: dict) -> RehabCenter:
-    fields = result_to_center_fields(item)
-    fields["slug"] = _unique_slug(db, fields["slug"])
-    fields["source"] = CenterSource.scraped
-    fields["listing_status"] = ListingStatus.draft
-    center = RehabCenter(**fields)
-    db.add(center)
-    db.commit()
-    db.refresh(center)
-    return center
-
-
-@router.post("/api/admin/scrape/{job_id}/add/{index}", response_model=RehabCenterAdmin)
-def add_scrape_result(job_id: int, index: int, _: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    results = _parse_job_results(job)
-    if index < 0 or index >= len(results):
-        raise HTTPException(status_code=404, detail="Result not found")
-    center = _create_center_from_item(db, results[index].model_dump())
-    return RehabCenterAdmin.model_validate(center)
-
-
-@router.post("/api/admin/scrape/{job_id}/save/{index}", response_model=ScrapeSavedOut)
-def save_scrape_result(job_id: int, index: int, admin: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    job = db.query(ScrapeJob).filter(ScrapeJob.id == job_id).first()
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    results = _parse_job_results(job)
-    if index < 0 or index >= len(results):
-        raise HTTPException(status_code=404, detail="Result not found")
-    r = results[index]
-    item = ScrapeSavedItem(
-        name=r.name,
-        address=r.address,
-        rating=r.rating,
-        services=r.services,
-        phone=r.phone,
-        description=r.description,
-        website=r.website,
-        source_url=r.source_url,
-        state=r.state or job.state,
-        created_by_id=admin.id,
-    )
-    db.add(item)
-    db.commit()
-    db.refresh(item)
-    return ScrapeSavedOut.model_validate(item)
-
-
-@router.get("/api/admin/scrape/saved/list", response_model=list[ScrapeSavedOut])
-def list_saved(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    items = db.query(ScrapeSavedItem).order_by(ScrapeSavedItem.created_at.desc()).all()
-    return [ScrapeSavedOut.model_validate(i) for i in items]
-
-
-@router.delete("/api/admin/scrape/saved/{item_id}", status_code=204)
-def delete_saved(item_id: int, _: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    item = db.query(ScrapeSavedItem).filter(ScrapeSavedItem.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    db.delete(item)
-    db.commit()
-
-
-@router.post("/api/admin/scrape/saved/{item_id}/add", response_model=RehabCenterAdmin)
-def add_saved_to_rehab(item_id: int, _: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    item = db.query(ScrapeSavedItem).filter(ScrapeSavedItem.id == item_id).first()
-    if not item:
-        raise HTTPException(status_code=404, detail="Not found")
-    data = {
-        "name": item.name,
-        "address": item.address,
-        "rating": float(item.rating) if item.rating else 4.0,
-        "services": item.services or [],
-        "phone": item.phone,
-        "description": item.description,
-        "website": item.website,
-        "source_url": item.source_url,
-        "state": item.state,
-    }
-    center = _create_center_from_item(db, data)
-    return RehabCenterAdmin.model_validate(center)
-
-
-@router.get("/api/admin/scrape-settings", response_model=ScrapeSettingsOut)
-def get_scrape_settings_api(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    s = get_scrape_settings(db)
-    return ScrapeSettingsOut(
-        openai_api_key_set=bool(s.openai_api_key),
-        kimi_api_key_set=bool(s.kimi_api_key),
-        claude_api_key_set=bool(s.claude_api_key),
-        gemini_api_key_set=bool(s.gemini_api_key),
-        openai_api_key_masked=mask_api_key(s.openai_api_key),
-        kimi_api_key_masked=mask_api_key(s.kimi_api_key),
-        claude_api_key_masked=mask_api_key(s.claude_api_key),
-        gemini_api_key_masked=mask_api_key(s.gemini_api_key),
-        preferred_provider=s.preferred_provider,
-    )
-
-
-@router.patch("/api/admin/scrape-settings", response_model=ScrapeSettingsOut)
-def update_scrape_settings(body: ScrapeSettingsUpdate, _: AdminUser, db: Annotated[Session, Depends(get_db)]):
-    s = get_scrape_settings(db)
-    data = body.model_dump(exclude_unset=True)
-    for k, v in data.items():
-        if k.endswith("_api_key") and v == "":
-            v = None
-        setattr(s, k, v)
-    db.commit()
-    db.refresh(s)
-    return ScrapeSettingsOut(
-        openai_api_key_set=bool(s.openai_api_key),
-        kimi_api_key_set=bool(s.kimi_api_key),
-        claude_api_key_set=bool(s.claude_api_key),
-        gemini_api_key_set=bool(s.gemini_api_key),
-        openai_api_key_masked=mask_api_key(s.openai_api_key),
-        kimi_api_key_masked=mask_api_key(s.kimi_api_key),
-        claude_api_key_masked=mask_api_key(s.claude_api_key),
-        gemini_api_key_masked=mask_api_key(s.gemini_api_key),
-        preferred_provider=s.preferred_provider,
-    )
+# GET /api/client/my-center is provided by leads_upsells (enriched with completeness)

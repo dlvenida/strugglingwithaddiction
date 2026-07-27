@@ -26,6 +26,7 @@ def _profile_out(user, profile: UserProfile) -> ProfileOut:
         country=profile.country,
         profile_photo_url=get_public_url(profile.profile_photo_key) if profile.profile_photo_key else None,
         social_links=profile.social_links or {},
+        notification_preferences=profile.notification_preferences or {},
         email=user.email,
         role=user.role.value,
     )

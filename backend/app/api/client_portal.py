@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.deps import ClientUser
+from app.core.deps import ActiveSubscriber
 from app.core.html import sanitize_html
 from app.database import get_db
 from app.models.client_portal import ClientLandingPage, ClientPost, ClientPostStatus
@@ -23,7 +23,7 @@ router = APIRouter(tags=["client-portal"])
 
 
 @router.get("/api/client/landing", response_model=LandingPageOut)
-def get_landing(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+def get_landing(user: ActiveSubscriber, db: Annotated[Session, Depends(get_db)]):
     page = db.query(ClientLandingPage).filter(ClientLandingPage.user_id == user.id).first()
     profile = db.query(UserProfile).filter(UserProfile.user_id == user.id).first()
     if not page:
@@ -44,7 +44,7 @@ def get_landing(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
 
 
 @router.patch("/api/client/landing", response_model=LandingPageOut)
-def update_landing(body: LandingPageUpdate, user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+def update_landing(body: LandingPageUpdate, user: ActiveSubscriber, db: Annotated[Session, Depends(get_db)]):
     page = db.query(ClientLandingPage).filter(ClientLandingPage.user_id == user.id).first()
     if not page:
         page = ClientLandingPage(user_id=user.id)
@@ -70,12 +70,12 @@ def update_landing(body: LandingPageUpdate, user: ClientUser, db: Annotated[Sess
 
 
 @router.get("/api/client/posts", response_model=list[ClientPostOut])
-def list_client_posts(user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+def list_client_posts(user: ActiveSubscriber, db: Annotated[Session, Depends(get_db)]):
     return db.query(ClientPost).filter(ClientPost.user_id == user.id).order_by(ClientPost.updated_at.desc()).all()
 
 
 @router.post("/api/client/posts", response_model=ClientPostOut, status_code=201)
-def create_client_post(body: ClientPostCreate, user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+def create_client_post(body: ClientPostCreate, user: ActiveSubscriber, db: Annotated[Session, Depends(get_db)]):
     if db.query(ClientPost).filter(ClientPost.user_id == user.id, ClientPost.slug == body.slug).first():
         raise HTTPException(status_code=400, detail="Slug exists")
     post = ClientPost(
@@ -95,7 +95,7 @@ def create_client_post(body: ClientPostCreate, user: ClientUser, db: Annotated[S
 
 
 @router.patch("/api/client/posts/{post_id}", response_model=ClientPostOut)
-def update_client_post(post_id: int, body: ClientPostUpdate, user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+def update_client_post(post_id: int, body: ClientPostUpdate, user: ActiveSubscriber, db: Annotated[Session, Depends(get_db)]):
     post = db.query(ClientPost).filter(ClientPost.id == post_id, ClientPost.user_id == user.id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -112,7 +112,7 @@ def update_client_post(post_id: int, body: ClientPostUpdate, user: ClientUser, d
 
 
 @router.delete("/api/client/posts/{post_id}", status_code=204)
-def delete_client_post(post_id: int, user: ClientUser, db: Annotated[Session, Depends(get_db)]):
+def delete_client_post(post_id: int, user: ActiveSubscriber, db: Annotated[Session, Depends(get_db)]):
     post = db.query(ClientPost).filter(ClientPost.id == post_id, ClientPost.user_id == user.id).first()
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")

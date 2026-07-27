@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 import logging
 import threading
+import time
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,9 +12,9 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy import text
 
-from app.api import auth, blog, billing, client_portal, profiles, rehab, search, users
+from app.api import auth, blog, billing, client_portal, profiles, rehab, search, users, import_centers, claim_journey, leads_upsells, lifecycle, email_admin, insurance, analytics
 from app.static_site import mount_image_assets, register_static_site
-from app.bootstrap import bootstrap_admin, bootstrap_plans, seed_rehab_centers
+from app.bootstrap import bootstrap_admin, bootstrap_plans, seed_rehab_centers, seed_insurance_catalog
 from app.seed_import import import_blog_if_empty, import_users_if_missing
 from app.config import get_settings
 from app.db_migrate import run_migrations
@@ -33,6 +34,7 @@ def _run_startup_tasks() -> None:
         bootstrap_admin(db)
         bootstrap_plans(db)
         seed_rehab_centers(db)
+        seed_insurance_catalog(db)
         import_blog_if_empty(db)
         import_users_if_missing(db)
     finally:
@@ -50,10 +52,25 @@ def _startup_worker() -> None:
         )
 
 
+def _lifecycle_worker() -> None:
+    """Run idempotent lifecycle email tasks every six hours."""
+    time.sleep(20)  # allow database bootstrap to complete first
+    while True:
+        db = SessionLocal()
+        try:
+            lifecycle.run_lifecycle_jobs(db)
+        except Exception:
+            logger.exception("Lifecycle job failed")
+        finally:
+            db.close()
+        time.sleep(6 * 60 * 60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Run DB bootstrap in the background so uvicorn binds to $PORT before Railway health checks.
     threading.Thread(target=_startup_worker, daemon=True, name="swa-startup").start()
+    threading.Thread(target=_lifecycle_worker, daemon=True, name="swa-lifecycle").start()
     yield
 
 
@@ -84,9 +101,16 @@ app.include_router(profiles.router)
 app.include_router(users.router)
 app.include_router(blog.router)
 app.include_router(rehab.router)
+app.include_router(import_centers.router)
+app.include_router(claim_journey.router)
+app.include_router(leads_upsells.router)
 app.include_router(billing.router)
 app.include_router(client_portal.router)
 app.include_router(search.router)
+app.include_router(lifecycle.router)
+app.include_router(email_admin.router)
+app.include_router(insurance.router)
+app.include_router(analytics.router)
 
 
 @app.get("/health")

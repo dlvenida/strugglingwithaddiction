@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { FaSearch, FaSlidersH, FaTimes, FaMapMarkerAlt } from 'react-icons/fa'
 import { US_STATES } from '../lib/usStates'
-import { REHAB_SERVICE_TYPES, REHAB_INSURANCE_TYPES } from '../lib/rehabServices'
+import { REHAB_SERVICE_TYPES } from '../lib/rehabServices'
 import './RehabSearch.css'
 
 const AI_PROMPTS = [
@@ -53,8 +53,9 @@ export default function RehabSearch({
   onStateChange,
   service,
   onServiceChange,
-  insurance,
+  insurance = '',
   onInsuranceChange,
+  insuranceOptions = [],
   resultCount,
   totalCount,
   onClear,
@@ -168,19 +169,33 @@ export default function RehabSearch({
                 </select>
               </div>
 
-              <div className="rehab-search-filter-group">
-                <label htmlFor="rehab-insurance-select">Insurance accepted</label>
-                <select
-                  id="rehab-insurance-select"
-                  value={insurance}
-                  onChange={e => onInsuranceChange(e.target.value)}
-                >
-                  <option value="">Any insurance</option>
-                  {REHAB_INSURANCE_TYPES.map(opt => (
-                    <option key={opt.id} value={opt.id}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
+              {typeof onInsuranceChange === 'function' && (
+                <div className="rehab-search-filter-group">
+                  <label htmlFor="rehab-insurance-select">Insurance</label>
+                  <select
+                    id="rehab-insurance-select"
+                    value={insurance}
+                    onChange={e => onInsuranceChange(e.target.value)}
+                  >
+                    <option value="">All insurance</option>
+                    {(insuranceOptions.length
+                      ? insuranceOptions
+                      : [
+                          { name: 'Aetna' },
+                          { name: 'Blue Cross Blue Shield' },
+                          { name: 'Cigna' },
+                          { name: 'UnitedHealthcare' },
+                          { name: 'Tricare' },
+                          { name: 'Medicaid' },
+                          { name: 'Medicare' },
+                          { name: 'Private Pay' },
+                        ]
+                    ).map(opt => (
+                      <option key={opt.slug || opt.name} value={opt.name}>{opt.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>

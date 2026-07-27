@@ -1,20 +1,29 @@
+import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
+import { api } from '../api'
 import GlobalSearch from './GlobalSearch'
 import Eyebrow from './ui/Eyebrow'
+import { applyTheme, getStoredTheme, toggleTheme } from '../theme'
 import {
-  IconHome, IconUsers, IconFile, IconBuilding, IconInbox, IconCard, IconScrape, IconSettings,
+  IconHome, IconUsers, IconFile, IconBuilding, IconInbox, IconCard, IconImport, IconSettings, IconChart,
 } from './Icons'
 
 const NAV_BY_ROLE = {
   admin: [
     { to: '/admin', label: 'Overview', end: true, Icon: IconHome },
+    { to: '/admin/analytics', label: 'Analytics', Icon: IconChart },
     { to: '/admin/users', label: 'Users', Icon: IconUsers },
     { to: '/admin/posts', label: 'Posts', Icon: IconFile },
     { to: '/admin/rehab', label: 'Rehab', Icon: IconBuilding },
     { to: '/admin/claims', label: 'Claims', Icon: IconInbox, badgeKey: 'claims' },
+    { to: '/admin/leads', label: 'Leads', Icon: IconInbox },
+    { to: '/admin/upsells', label: 'Upsells', Icon: IconFile },
     { to: '/admin/billing', label: 'Billing', Icon: IconCard },
-    { to: '/admin/scrape', label: 'Scrape', Icon: IconScrape },
+    { to: '/admin/import', label: 'Import', Icon: IconImport },
+    { to: '/admin/lifecycle', label: 'Lifecycle', Icon: IconSettings },
+    { to: '/admin/emails', label: 'Emails', Icon: IconFile },
+    { to: '/admin/insurances', label: 'Insurance', Icon: IconCard },
     { to: '/admin/profile', label: 'Settings', Icon: IconSettings },
   ],
   editor: [
@@ -24,11 +33,13 @@ const NAV_BY_ROLE = {
   ],
   client: [
     { to: '/client', label: 'Overview', end: true, Icon: IconHome },
-    { to: '/client/center', label: 'Center', Icon: IconBuilding },
-    { to: '/client/landing', label: 'Landing', Icon: IconFile },
+    { to: '/client/profile', label: 'Profile', Icon: IconBuilding },
+    { to: '/client/leads', label: 'Leads', Icon: IconInbox },
+    { to: '/client/upsells', label: 'Upgrades', Icon: IconFile },
+    { to: '/client/landing', label: 'Partner page', Icon: IconFile },
     { to: '/client/posts', label: 'Posts', Icon: IconFile },
     { to: '/client/billing', label: 'Billing', Icon: IconCard },
-    { to: '/client/profile', label: 'Settings', Icon: IconSettings },
+    { to: '/client/account', label: 'Account', Icon: IconSettings },
   ],
 }
 
@@ -42,7 +53,27 @@ function initials(name, email) {
 export default function Shell({ children, pendingClaims = 0 }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const nav = NAV_BY_ROLE[user?.role] || []
+  const [subscriptionLocked, setSubscriptionLocked] = useState(false)
+  const [theme, setTheme] = useState(() => getStoredTheme())
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    if (user?.role !== 'client') {
+      setSubscriptionLocked(false)
+      return
+    }
+    api('/api/billing/subscription')
+      .then(sub => setSubscriptionLocked(!['active', 'trialing', 'past_due'].includes(sub?.status)))
+      // Preserve navigation if subscription status cannot be loaded.
+      .catch(() => setSubscriptionLocked(false))
+  }, [user?.role])
+
+  const nav = subscriptionLocked && user?.role === 'client'
+    ? NAV_BY_ROLE.client.filter(item => item.to === '/client/billing')
+    : NAV_BY_ROLE[user?.role] || []
 
   return (
     <div className="app-shell">
@@ -52,9 +83,27 @@ export default function Shell({ children, pendingClaims = 0 }) {
         <GlobalSearch nav={nav} role={user?.role} />
         <button
           type="button"
+          className="theme-toggle"
+          aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          onClick={() => setTheme(prev => toggleTheme(prev))}
+        >
+          {theme === 'dark' ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.75" />
+              <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20.5 14.3A8.2 8.2 0 0 1 9.7 3.5 8.5 8.5 0 1 0 20.5 14.3Z" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+        <button
+          type="button"
           className="avatar-btn"
           title={user?.email}
-          onClick={() => navigate(`/${user?.role}/profile`)}
+          onClick={() => navigate(subscriptionLocked ? '/client/billing' : (user?.role === 'client' ? '/client/account' : `/${user?.role}/profile`))}
         >
           {initials(user?.display_name, user?.email)}
         </button>
@@ -73,7 +122,7 @@ export default function Shell({ children, pendingClaims = 0 }) {
                   end={item.end}
                   className={({ isActive }) => `rail-link${isActive ? ' active' : ''}`}
                 >
-                  <I size={18} />
+                  <I size={16} />
                   <span>{item.label}</span>
                   {badge != null && <span className="rail-badge">{badge}</span>}
                 </NavLink>
@@ -84,7 +133,15 @@ export default function Shell({ children, pendingClaims = 0 }) {
           <div className="rail-footer">
             <Eyebrow className="rail-eyebrow">Account</Eyebrow>
             <p className="rail-user-name">{user?.display_name || user?.email}</p>
-            <button type="button" className="btn btn-ghost btn-sm btn-block" onClick={() => { logout(); navigate('/login') }}>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm btn-block"
+              onClick={() => {
+                const loginPath = user?.role === 'admin' ? '/swa-login' : '/login'
+                logout()
+                navigate(loginPath)
+              }}
+            >
               Sign out
             </button>
           </div>

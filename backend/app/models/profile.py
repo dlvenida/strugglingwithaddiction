@@ -22,5 +22,6 @@ class UserProfile(Base, TimestampMixin):
     country: Mapped[str | None] = mapped_column(String(100), nullable=True)
     profile_photo_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
     social_links: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    notification_preferences: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     user: Mapped["User"] = relationship(back_populates="profile")

@@ -50,8 +50,8 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_price_monthly: str = ""
     stripe_price_yearly: str = ""
-    public_site_url: str = "http://localhost:5173"
-    admin_site_url: str = "http://localhost:5174"
+    public_site_url: str = "http://127.0.0.1:5173"
+    admin_site_url: str = "http://127.0.0.1:5180"
     s3_endpoint_url: str = ""
     s3_access_key_id: str = ""
     s3_secret_access_key: str = ""
@@ -59,6 +59,26 @@ class Settings(BaseSettings):
     s3_public_url: str = ""
     upload_dir: str = "uploads"
     environment: str = "development"
+    # Email (Resend preferred; SMTP fallback; otherwise logs to console)
+    resend_api_key: str = ""
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_use_tls: bool = True
+    email_from: str = "noreply@strugglingwithaddiction.com"
+    postal_address: str = "Struggling With Addiction, USA"
+    # Upsell Stripe price IDs (optional; human products can be request-only)
+    stripe_price_verified_badge: str = ""
+    stripe_price_featured_placement: str = ""
+    # Internal alerts for human-closed upsells
+    upsell_alert_email: str = ""
+    # Phone ownership callback (Twilio SMS). Without credentials codes are logged locally.
+    twilio_account_sid: str = ""
+    twilio_auth_token: str = ""
+    twilio_from_number: str = ""
+    # Optional — enables live Google review feed on rehab detail pages
+    google_places_api_key: str = ""
 
     @property
     def cors_origin_list(self) -> list[str]:

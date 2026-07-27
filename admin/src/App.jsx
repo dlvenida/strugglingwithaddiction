@@ -3,6 +3,7 @@ import { useAuth } from './auth'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AdminLayout, ClientLayout, EditorLayout } from './components/Layout'
 import Login from './pages/Login'
+import SwaLogin from './pages/SwaLogin'
 import Register from './pages/Register'
 import ProfilePage from './pages/Profile'
 import AdminDashboard from './pages/admin/Dashboard'
@@ -13,7 +14,13 @@ import AdminRehab from './pages/admin/Rehab'
 import RehabEditor from './pages/admin/rehab/RehabEditor'
 import AdminClaims from './pages/admin/Claims'
 import AdminBilling from './pages/admin/Billing'
-import AdminScrape from './pages/admin/Scrape'
+import AdminImport from './pages/admin/Import'
+import AdminLifecycle from './pages/admin/Lifecycle'
+import AdminLeads from './pages/admin/Leads'
+import AdminUpsells from './pages/admin/Upsells'
+import AdminEmails from './pages/admin/Emails'
+import AdminInsurances from './pages/admin/Insurances'
+import AdminAnalytics from './pages/admin/Analytics'
 import EditorDashboard from './pages/editor/Dashboard'
 import EditorPosts from './pages/editor/Posts'
 import ClientDashboard from './pages/client/Dashboard'
@@ -21,6 +28,10 @@ import ClientBilling from './pages/client/Billing'
 import ClientLanding from './pages/client/Landing'
 import ClientPosts from './pages/client/Posts'
 import ClientMyCenter from './pages/client/MyCenter'
+import ClientLeads from './pages/client/Leads'
+import ClientUpsells from './pages/client/Upsells'
+import PasswordRecovery from './pages/PasswordRecovery'
+import ConfirmEmail from './pages/ConfirmEmail'
 
 function HomeRedirect() {
   const { user, loading } = useAuth()
@@ -35,21 +46,31 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/swa-login" element={<SwaLogin />} />
+      <Route path="/swa-login/" element={<SwaLogin />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/reset-password" element={<PasswordRecovery />} />
+      <Route path="/confirm-email" element={<ConfirmEmail />} />
       <Route path="/" element={<HomeRedirect />} />
 
-      <Route path="/admin" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/users" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/posts" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminPosts /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/posts/new" element={<ProtectedRoute roles={['admin']}><AdminLayout><PostEditor /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/posts/:id/edit" element={<ProtectedRoute roles={['admin']}><AdminLayout><PostEditor /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/rehab" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminRehab /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/rehab/new" element={<ProtectedRoute roles={['admin']}><AdminLayout><RehabEditor /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/rehab/:id/edit" element={<ProtectedRoute roles={['admin']}><AdminLayout><RehabEditor /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/claims" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminClaims /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/billing" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminBilling /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/scrape" element={<ProtectedRoute roles={['admin']}><AdminLayout><AdminScrape /></AdminLayout></ProtectedRoute>} />
-      <Route path="/admin/profile" element={<ProtectedRoute roles={['admin']}><AdminLayout><ProfilePage /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/analytics" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminAnalytics /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/posts" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminPosts /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/posts/new" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><PostEditor /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/posts/:id/edit" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><PostEditor /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/rehab" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminRehab /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/rehab/new" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><RehabEditor /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/rehab/:id/edit" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><RehabEditor /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/claims" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminClaims /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/billing" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminBilling /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/import" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminImport /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/lifecycle" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminLifecycle /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/leads" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminLeads /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/upsells" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminUpsells /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/emails" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminEmails /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/insurances" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><AdminInsurances /></AdminLayout></ProtectedRoute>} />
+      <Route path="/admin/profile" element={<ProtectedRoute roles={['admin']} loginPath="/swa-login"><AdminLayout><ProfilePage /></AdminLayout></ProtectedRoute>} />
 
       <Route path="/editor" element={<ProtectedRoute roles={['editor', 'admin']}><EditorLayout><EditorDashboard /></EditorLayout></ProtectedRoute>} />
       <Route path="/editor/posts" element={<ProtectedRoute roles={['editor', 'admin']}><EditorLayout><EditorPosts /></EditorLayout></ProtectedRoute>} />
@@ -62,7 +83,10 @@ export default function App() {
       <Route path="/client/landing" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientLanding /></ClientLayout></ProtectedRoute>} />
       <Route path="/client/posts" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientPosts /></ClientLayout></ProtectedRoute>} />
       <Route path="/client/center" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientMyCenter /></ClientLayout></ProtectedRoute>} />
-      <Route path="/client/profile" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ProfilePage /></ClientLayout></ProtectedRoute>} />
+      <Route path="/client/profile" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientMyCenter /></ClientLayout></ProtectedRoute>} />
+      <Route path="/client/leads" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientLeads /></ClientLayout></ProtectedRoute>} />
+      <Route path="/client/upsells" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ClientUpsells /></ClientLayout></ProtectedRoute>} />
+      <Route path="/client/account" element={<ProtectedRoute roles={['client', 'admin']}><ClientLayout><ProfilePage /></ClientLayout></ProtectedRoute>} />
     </Routes>
   )
 }

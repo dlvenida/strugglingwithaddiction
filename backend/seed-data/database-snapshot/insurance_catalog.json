@@ -1,0 +1,252 @@
+[
+  {
+    "id": 1,
+    "name": "Aetna",
+    "slug": "aetna",
+    "logo_path": "/images/insurance/aetna.png",
+    "enabled": true,
+    "sort_order": 10,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 2,
+    "name": "Blue Cross Blue Shield",
+    "slug": "blue-cross-blue-shield",
+    "logo_path": "/images/insurance/blue-cross-blue-shield.png",
+    "enabled": true,
+    "sort_order": 20,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 3,
+    "name": "Cigna",
+    "slug": "cigna",
+    "logo_path": "/images/insurance/cigna.png",
+    "enabled": true,
+    "sort_order": 30,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 4,
+    "name": "UnitedHealthcare",
+    "slug": "unitedhealthcare",
+    "logo_path": "/images/insurance/unitedhealthcare.png",
+    "enabled": true,
+    "sort_order": 40,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 5,
+    "name": "Anthem",
+    "slug": "anthem",
+    "logo_path": "/images/insurance/anthem.png",
+    "enabled": true,
+    "sort_order": 50,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 6,
+    "name": "Humana",
+    "slug": "humana",
+    "logo_path": "/images/insurance/humana.png",
+    "enabled": true,
+    "sort_order": 60,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 7,
+    "name": "Kaiser Permanente",
+    "slug": "kaiser-permanente",
+    "logo_path": "/images/insurance/kaiser-permanente.png",
+    "enabled": true,
+    "sort_order": 70,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 8,
+    "name": "Medicaid",
+    "slug": "medicaid",
+    "logo_path": "/images/insurance/medicaid.png",
+    "enabled": true,
+    "sort_order": 80,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 9,
+    "name": "Medicare",
+    "slug": "medicare",
+    "logo_path": "/images/insurance/medicare.png",
+    "enabled": true,
+    "sort_order": 90,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 10,
+    "name": "Tricare",
+    "slug": "tricare",
+    "logo_path": "/images/insurance/tricare.png",
+    "enabled": true,
+    "sort_order": 100,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 11,
+    "name": "Optum",
+    "slug": "optum",
+    "logo_path": "/images/insurance/optum.png",
+    "enabled": true,
+    "sort_order": 110,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 12,
+    "name": "Magellan Health",
+    "slug": "magellan-health",
+    "logo_path": "/images/insurance/magellan-health.png",
+    "enabled": true,
+    "sort_order": 120,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 13,
+    "name": "Beacon Health Options",
+    "slug": "beacon-health",
+    "logo_path": "/images/insurance/beacon-health.png",
+    "enabled": true,
+    "sort_order": 130,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 14,
+    "name": "Molina Healthcare",
+    "slug": "molina",
+    "logo_path": "/images/insurance/molina.png",
+    "enabled": true,
+    "sort_order": 150,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 15,
+    "name": "Ambetter",
+    "slug": "ambetter",
+    "logo_path": "/images/insurance/ambetter.png",
+    "enabled": true,
+    "sort_order": 160,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 16,
+    "name": "Oscar Health",
+    "slug": "oscar",
+    "logo_path": "/images/insurance/oscar.png",
+    "enabled": true,
+    "sort_order": 170,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 17,
+    "name": "WellCare",
+    "slug": "wellcare",
+    "logo_path": "/images/insurance/wellcare.png",
+    "enabled": true,
+    "sort_order": 180,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 18,
+    "name": "Centene",
+    "slug": "centene",
+    "logo_path": "/images/insurance/centene.png",
+    "enabled": true,
+    "sort_order": 190,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 19,
+    "name": "Private Pay",
+    "slug": "private-pay",
+    "logo_path": "/images/insurance/private-pay.png",
+    "enabled": true,
+    "sort_order": 200,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 20,
+    "name": "Self Pay",
+    "slug": "self-pay",
+    "logo_path": "/images/insurance/self-pay.png",
+    "enabled": true,
+    "sort_order": 210,
+    "created_at": "2026-07-24T05:48:10.365718+00:00",
+    "updated_at": "2026-07-24T05:48:10.365718+00:00"
+  },
+  {
+    "id": 21,
+    "name": "ComPsych",
+    "slug": "compsych",
+    "logo_path": "/images/insurance/compsych.png",
+    "enabled": true,
+    "sort_order": 135,
+    "created_at": "2026-07-26T23:38:55.839885+00:00",
+    "updated_at": "2026-07-26T23:38:55.839885+00:00"
+  },
+  {
+    "id": 22,
+    "name": "Health Net",
+    "slug": "health-net",
+    "logo_path": "/images/insurance/health-net.png",
+    "enabled": true,
+    "sort_order": 138,
+    "created_at": "2026-07-26T23:38:55.839885+00:00",
+    "updated_at": "2026-07-26T23:38:55.839885+00:00"
+  },
+  {
+    "id": 23,
+    "name": "Optima Health",
+    "slug": "optima-health",
+    "logo_path": "/images/insurance/optima-health.png",
+    "enabled": true,
+    "sort_order": 142,
+    "created_at": "2026-07-26T23:38:55.839885+00:00",
+    "updated_at": "2026-07-26T23:38:55.839885+00:00"
+  },
+  {
+    "id": 24,
+    "name": "MultiPlan",
+    "slug": "multiplan",
+    "logo_path": "/images/insurance/multiplan.png",
+    "enabled": true,
+    "sort_order": 145,
+    "created_at": "2026-07-26T23:38:55.839885+00:00",
+    "updated_at": "2026-07-26T23:38:55.839885+00:00"
+  },
+  {
+    "id": 25,
+    "name": "AmeriHealth",
+    "slug": "amerihealth",
+    "logo_path": "/images/insurance/amerihealth.png",
+    "enabled": true,
+    "sort_order": 148,
+    "created_at": "2026-07-26T23:38:55.839885+00:00",
+    "updated_at": "2026-07-26T23:38:55.839885+00:00"
+  }
+]
