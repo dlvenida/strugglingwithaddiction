@@ -35,13 +35,6 @@ export default function Footer() {
             </ul>
           </div>
           <div className="footer-col">
-            <h4>Resources</h4>
-            <ul>
-              <li><a href="#find-help">Find Help Near You</a></li>
-              <li><a href="#stories">Recovery Stories</a></li>
-            </ul>
-          </div>
-          <div className="footer-col">
             <h4>Site Support</h4>
             <ul>
               <li><a href="mailto:help@strugglingwithaddiction.com">help@strugglingwithaddiction.com</a></li>
