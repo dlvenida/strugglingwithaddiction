@@ -1,1 +1,0 @@
-function e(e){return String(e||``).toLowerCase().trim().replace(/[^a-z0-9]+/g,`-`).replace(/^-+|-+$/g,``)}function t(t){let n=t.state||t.location?.split(`,`).at(-1)?.trim(),r=t.city||t.location?.split(`,`)[0]?.trim();return!n||!r||!t.name?null:`/rehabs/united-states/${e(n)}/${e(r)}/${e(t.name)}`}export{t};
