@@ -128,7 +128,6 @@ export default function RehabCenterDetail() {
   const { state, city, facility } = useParams()
   const [center, setCenter] = useState(null)
   const [error, setError] = useState('')
-  const [activeSection, setActiveSection] = useState('about')
 
   useEffect(() => {
     const path = `/rehabs/united-states/${state}/${city}/${facility}`
@@ -185,23 +184,6 @@ export default function RehabCenterDetail() {
 
   useEffect(() => {
     if (!center) return
-    const sections = ['about', 'care', 'insurance', 'accreditations', 'reviews', 'location']
-      .map(id => document.getElementById(id))
-      .filter(Boolean)
-    if (!sections.length) return
-    const observer = new IntersectionObserver(
-      entries => {
-        const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        if (visible?.target?.id) setActiveSection(visible.target.id)
-      },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0.15, 0.4] },
-    )
-    sections.forEach(section => observer.observe(section))
-    return () => observer.disconnect()
-  }, [center])
-
-  useEffect(() => {
-    if (!center) return
     const form = document.getElementById('inquiry')
     const bar = document.querySelector('.rpd-mobile-bar')
     if (!form || !bar) return
@@ -237,14 +219,6 @@ export default function RehabCenterDetail() {
   const gallery = [center.image, ...(center.gallery_urls || [])].filter(Boolean)
     .filter((url, index, all) => all.indexOf(url) === index)
   const embedUrl = mapsEmbedUrl(center.google_maps_url, address)
-  const navItems = [
-    ['about', 'About'],
-    ['care', 'Care offered'],
-    ['insurance', 'Insurance'],
-    ['accreditations', 'Accreditations'],
-    ['reviews', 'Reviews'],
-    ['location', 'Location'],
-  ]
 
   return (
     <main className="rpd-page">
@@ -295,16 +269,6 @@ export default function RehabCenterDetail() {
           </div>
         </div>
       )}
-
-      <div className="rpd-nav-wrap">
-        <div className="container">
-          <nav className="rpd-section-nav" aria-label="Profile sections">
-            {navItems.map(([id, label]) => (
-              <a key={id} href={`#${id}`} className={activeSection === id ? 'is-active' : ''}>{label}</a>
-            ))}
-          </nav>
-        </div>
-      </div>
 
       <div className="container rpd-layout">
         <div className="rpd-content">

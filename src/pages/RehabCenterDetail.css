@@ -6,9 +6,8 @@
   --rpd-panel: #ffffff;
   --rpd-accent: #8c1126;
   --rpd-calm: #98b8c4;
-  background:
-    radial-gradient(ellipse at top, rgba(152, 184, 196, 0.18), transparent 42%),
-    linear-gradient(180deg, #eef3f5 0%, #fafaf8 32%, #f7f7f4 100%);
+  --rpd-sticky-top: calc(var(--header-height) + 1rem);
+  background: var(--off-white);
   color: var(--rpd-ink);
   min-height: 70vh;
 }
@@ -246,42 +245,6 @@
   text-decoration: none;
 }
 
-.rpd-nav-wrap {
-  position: sticky;
-  top: var(--header-height);
-  z-index: 5;
-  background: #fafaf8;
-}
-
-.rpd-section-nav {
-  display: flex;
-  gap: 0.25rem;
-  overflow-x: auto;
-  padding: 0.7rem 0;
-  scrollbar-width: none;
-}
-
-.rpd-section-nav::-webkit-scrollbar {
-  display: none;
-}
-
-.rpd-section-nav a {
-  flex: 0 0 auto;
-  text-decoration: none;
-  color: var(--rpd-muted);
-  padding: 0.55rem 0.95rem;
-  border-radius: 999px;
-  font-size: 0.88rem;
-  transition: background 0.2s, color 0.2s;
-}
-
-.rpd-section-nav a.is-active,
-.rpd-section-nav a:hover {
-  background: #fff;
-  color: var(--rpd-ink);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
-}
-
 /* Content LEFT · Form sidebar RIGHT */
 .rpd-layout {
   display: grid;
@@ -292,14 +255,19 @@
 }
 
 .rpd-sidebar {
+  position: sticky;
+  top: var(--rpd-sticky-top);
+  align-self: start;
+  z-index: 4;
   min-width: 0;
 }
 
 .rpd-sticky {
-  position: sticky;
-  top: 140px;
   display: grid;
   gap: 0.85rem;
+  max-height: calc(100vh - var(--rpd-sticky-top) - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .rpd-form,
@@ -427,7 +395,7 @@
   border-radius: 18px;
   padding: 1.5rem;
   margin-bottom: 1.1rem;
-  scroll-margin-top: 140px;
+  scroll-margin-top: calc(var(--rpd-sticky-top) + 1rem);
 }
 
 .rpd-section p {
@@ -809,14 +777,13 @@
 
   .rpd-sidebar {
     order: 2;
+    position: static;
+    max-height: none;
   }
 
   .rpd-sticky {
-    position: static;
-  }
-
-  .rpd-nav-wrap {
-    top: var(--header-height);
+    max-height: none;
+    overflow-y: visible;
   }
 
   .rpd-mobile-bar {
