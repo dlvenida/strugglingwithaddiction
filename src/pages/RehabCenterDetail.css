@@ -205,9 +205,8 @@
   overflow: hidden;
   border-radius: 16px;
   background: #dbe4e8;
-  min-height: 320px;
+  width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: 520px;
   box-shadow: 0 16px 36px rgba(26, 26, 46, 0.12);
 }
 
@@ -307,7 +306,8 @@
   grid-template-columns: minmax(0, 1fr) minmax(290px, 360px);
   gap: 1.75rem 2rem;
   align-items: start;
-  padding: 2rem 0 5rem;
+  padding-top: 2rem;
+  padding-bottom: 5rem;
 }
 
 .rpd-sidebar {
@@ -904,11 +904,6 @@
 
   .rpd-gallery {
     margin-top: -1.1rem;
-  }
-
-  .rpd-gallery-main {
-    min-height: 220px;
-    max-height: 360px;
   }
 
   .rpd-filmstrip-thumb {
