@@ -3,9 +3,9 @@
   min-height: 38vh;
   display: flex;
   align-items: center;
-  background-image: url('/images/recovery-community-hope-v2.jpg');
+  background-image: url('/images/blog/US-Hospitals-Should-Have-Addiction-Specialist-ER-Overdose-Prevention_1043242537.webp');
   background-size: cover;
-  background-position: top center;
+  background-position: center;
   color: white;
   padding: 8rem 0 4.5rem;
   text-align: center;
@@ -14,7 +14,7 @@
 .portal-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(26, 26, 46, 0.92) 0%, rgba(26, 26, 46, 0.7) 100%);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.72) 0%, rgba(26, 26, 46, 0.55) 100%);
 }
 
 .portal-hero-content {
