@@ -73,7 +73,7 @@
 }
 
 .guided-finder-step-marker.is-active .guided-finder-step-num {
-  background: var(--brand-red);
+  background: var(--brand-blue);
   color: var(--white);
 }
 
@@ -139,14 +139,14 @@
 .guided-finder-submit {
   min-width: 10rem;
   text-align: center;
-  background-color: var(--brand-red);
-  border-color: var(--brand-red);
+  background-color: var(--brand-blue);
+  border-color: var(--brand-blue);
   color: var(--white);
 }
 
 .guided-finder-submit:hover {
-  background-color: #6b0d1e;
-  border-color: #6b0d1e;
+  background-color: #3aa0e0;
+  border-color: #3aa0e0;
   color: var(--white);
 }
 
@@ -248,7 +248,7 @@
 }
 
 .guided-finder--hero .guided-finder-step-marker.is-active .guided-finder-step-num {
-  background: var(--brand-red);
+  background: var(--brand-blue);
   color: var(--white);
 }
 
