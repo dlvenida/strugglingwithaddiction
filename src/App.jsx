@@ -10,7 +10,6 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import PageViewTracker from './components/PageViewTracker'
 import Home from './pages/Home'
-import About from './pages/About'
 import NotFound from './pages/NotFound'
 import './App.css'
 
@@ -24,6 +23,7 @@ const Unsubscribe = lazy(() => import('./pages/Unsubscribe'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsOfUse = lazy(() => import('./pages/TermsOfUse'))
 const Accessibility = lazy(() => import('./pages/Accessibility'))
+const About = lazy(() => import('./pages/About'))
 const AuthorPage = lazy(() => import('./pages/AuthorPage'))
 const ClaimStatus = lazy(() => import('./pages/ClaimStatus'))
 const PartnerPage = lazy(() => import('./pages/PartnerPage'))
@@ -43,7 +43,6 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/rehab-centers" element={<RehabCenters />} />
@@ -51,7 +50,6 @@ export default function App() {
           <Route path="/rehab-centers/state/:state" element={<RehabLocationIndex />} />
           <Route path="/rehabs/united-states/:state/:city/:facility" element={<RehabCenterDetail />} />
           <Route path="/portal" element={<Portal />} />
-          <Route path="/our-team" element={<Navigate to="/about" replace />} />
           <Route path="/claim-status/:ticket" element={<ClaimStatus />} />
           <Route path="/provider" element={<ProviderLoginRedirect />} />
           <Route path="/provider/login" element={<ProviderLoginRedirect />} />
@@ -62,6 +60,8 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfUse />} />
           <Route path="/accessibility" element={<Accessibility />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/our-team" element={<Navigate to="/about" replace />} />
           <Route path="/author/:slug" element={<AuthorPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

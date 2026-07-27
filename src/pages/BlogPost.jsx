@@ -3,6 +3,7 @@ import { useParams, Link, Navigate } from 'react-router-dom'
 import postsStatic from '../data/posts.json'
 import { usePost, usePosts, useAuthors } from '../hooks/useBlogData'
 import { usePostSeo } from '../hooks/usePageSeo'
+import GuidedFinder from '../components/GuidedFinder'
 import './BlogPost.css'
 
 function formatDate(iso) {
@@ -122,21 +123,24 @@ export default function BlogPost() {
 
           {/* CTA mid-article */}
           <div className="post-cta-box">
-            <h3>Need Help Right Now?</h3>
-            <p>Our confidential helpline is available 24/7. A real person is always on the other end — free of charge.</p>
-            <a href="tel:18005551234" className="btn">Call 1-800-555-1234</a>
+            <h3>Looking for Treatment?</h3>
+            <p>
+              Browse verified treatment centers by state, level of care, and insurance accepted.
+              Contact facilities directly — on your terms.
+            </p>
+            <Link to="/rehab-centers" className="btn">Search Treatment Centers</Link>
           </div>
         </article>
 
+        <div className="post-layout-rule" aria-hidden="true" />
+
         {/* ── Sidebar ──────────────────────────────── */}
-        <aside className="post-sidebar">
-          <div className="sidebar-widget sidebar-cta">
-            <h3>Get Help Today</h3>
-            <p>Free, confidential support available 24/7.</p>
-            <a href="tel:18005551234" className="btn">Call Now</a>
+        <aside className="post-sidebar" aria-label="Article sidebar">
+          <div className="sidebar-widget sidebar-finder">
+            <GuidedFinder variant="sidebar" />
           </div>
 
-          <div className="sidebar-widget">
+          <div className="sidebar-widget sidebar-articles">
             <h4>More Articles</h4>
             <ul className="sidebar-posts">
               {related.map(r => (

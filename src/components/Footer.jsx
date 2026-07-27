@@ -21,9 +21,6 @@ export default function Footer() {
           <p className="footer-tagline">
             You are not alone. Recovery is possible — one day at a time.
           </p>
-          <a href="tel:18005551234" className="btn footer-call-btn">
-            Call Us: 1-800-555-1234
-          </a>
           <SocialLinks className="footer-socials" iconSize={20} />
         </div>
 
@@ -35,22 +32,15 @@ export default function Footer() {
               <li><Link to="/rehab-centers">Directory</Link></li>
               <li><Link to="/blog">Blog</Link></li>
               <li><Link to="/portal">Portal</Link></li>
+              <li><Link to="/about">About</Link></li>
               <li><Link to={providerPortalPath()}>Rehab Provider Login</Link></li>
             </ul>
           </div>
           <div className="footer-col">
-            <h4>Resources</h4>
+            <h4>Site Support</h4>
             <ul>
-              <li><a href="#crisis">Crisis Hotline</a></li>
-              <li><a href="#find-help">Find Help Near You</a></li>
-              <li><a href="#stories">Recovery Stories</a></li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Contact</h4>
-            <ul>
-              <li><a href="tel:18005551234">1-800-555-1234</a></li>
               <li><a href="mailto:help@strugglingwithaddiction.com">help@strugglingwithaddiction.com</a></li>
+              <li><Link to="/rehab-centers">Browse Directory</Link></li>
             </ul>
           </div>
         </div>
@@ -61,11 +51,11 @@ export default function Footer() {
         <div className="container footer-bottom-inner">
           <p>&copy; {year} Struggling With Addiction. All rights reserved.</p>
           <div className="footer-legal">
-            <a href="/privacy">Privacy Policy</a>
+            <Link to="/privacy">Privacy Policy</Link>
             <span aria-hidden="true">·</span>
-            <a href="/terms">Terms of Use</a>
+            <Link to="/terms">Terms of Use</Link>
             <span aria-hidden="true">·</span>
-            <a href="/accessibility">Accessibility</a>
+            <Link to="/accessibility">Accessibility</Link>
           </div>
         </div>
       </div>

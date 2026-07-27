@@ -161,7 +161,7 @@ export default function ClaimStatus() {
           </div>
         )}
         <p style={{ marginTop: '2rem' }}>
-          <Link to="/rehab-centers">← Back to rehab centers</Link>
+          <Link to="/rehab-centers">← Back to directory</Link>
         </p>
       </div>
     </main>

@@ -31,6 +31,7 @@ from app.schemas.rehab import (
     RehabCenterCreate,
     RehabCenterPublic,
     RehabCenterUpdate,
+    RehabDirectoryStats,
 )
 from app.config import get_settings
 from app.services.email import send_email
@@ -89,6 +90,20 @@ def get_claimed_center_landing(
     if not public.claimed:
         raise HTTPException(status_code=404, detail="Claimed center landing page not found")
     return public
+
+
+@router.get("/api/rehab-centers/stats", response_model=RehabDirectoryStats)
+def directory_stats(db: Annotated[Session, Depends(get_db)]):
+    claimed = (
+        db.query(RehabCenter)
+        .filter(
+            RehabCenter.listing_status == ListingStatus.published,
+            RehabCenter.deleted_at.is_(None),
+            RehabCenter.claimed.is_(True),
+        )
+        .count()
+    )
+    return RehabDirectoryStats(claimed=claimed)
 
 
 @router.get("/api/rehab-centers/{slug}", response_model=RehabCenterPublic)

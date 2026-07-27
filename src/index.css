@@ -13,6 +13,10 @@
   --light-gray: #f3f4f6;
   --off-white: #fafaf8;
   --white: #ffffff;
+  --navy: #191d38;
+  --accent-teal: #5dcaa5;
+  --accent-gold: #dda24a;
+  --header-height: 72px;
   --transition: 0.3s ease;
   --font-body: 'Open Sans', Helvetica, Arial, sans-serif;
   --font-heading: 'PT Serif', Georgia, serif;
@@ -21,7 +25,7 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -31,7 +35,7 @@ body {
   line-height: 1.75;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 img {
@@ -62,6 +66,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  text-align: center;
   transition: background-color var(--transition), transform var(--transition), box-shadow var(--transition);
   cursor: pointer;
   text-decoration: none;

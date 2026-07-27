@@ -60,6 +60,10 @@ class CenterReviewsOut(BaseModel):
     reviews: list[ReviewItem] = Field(default_factory=list)
 
 
+class RehabDirectoryStats(BaseModel):
+    claimed: int
+
+
 class RehabCenterAdmin(BaseModel):
     id: int
     slug: str
