@@ -326,6 +326,15 @@
   text-align: center;
   padding: 0.6rem 1rem;
   font-size: 0.8rem;
+  background-color: transparent;
+  border-color: var(--brand-red);
+  color: var(--brand-red);
+}
+
+.sidebar-all-btn:hover {
+  background-color: var(--brand-red);
+  border-color: var(--brand-red);
+  color: var(--white);
 }
 
 /* ── Related posts ────────────────────────── */
