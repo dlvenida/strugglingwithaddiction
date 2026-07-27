@@ -103,20 +103,22 @@
   letter-spacing: -0.02em;
 }
 
+.rpd-title-end {
+  white-space: nowrap;
+}
+
 .rpd-verified {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 0.28em;
+  display: inline;
+  margin-left: 0.22em;
   color: var(--brand-blue);
-  font-size: 0.48em;
+  font-size: 0.52em;
   line-height: 1;
-  vertical-align: middle;
-  position: relative;
-  top: -0.08em;
+  vertical-align: 0.2em;
 }
 
 .rpd-verified svg {
-  display: block;
+  display: inline;
+  vertical-align: baseline;
 }
 
 .rpd-featured {

@@ -286,12 +286,22 @@ export default function RehabCenterDetail() {
             )}
             <div className="rpd-title-row">
               <h1>
-                {center.name}
-                {center.verified_badge && (
-                  <span className="rpd-verified" title="Verified listing" aria-label="Verified listing">
-                    <MdVerified aria-hidden="true" />
-                  </span>
-                )}
+                {center.verified_badge ? (() => {
+                  const parts = String(center.name).trim().split(/\s+/)
+                  const last = parts.pop()
+                  const lead = parts.join(' ')
+                  return (
+                    <>
+                      {lead ? `${lead} ` : ''}
+                      <span className="rpd-title-end">
+                        {last}
+                        <span className="rpd-verified" title="Verified listing" aria-label="Verified listing">
+                          <MdVerified aria-hidden="true" />
+                        </span>
+                      </span>
+                    </>
+                  )
+                })() : center.name}
               </h1>
             </div>
             <div className="rpd-meta">
