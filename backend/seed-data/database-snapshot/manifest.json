@@ -1,0 +1,77 @@
+{
+  "format": "swa-database-snapshot-v1",
+  "exported_at": "2026-07-27T03:00:11Z",
+  "tables": [
+    {
+      "name": "users",
+      "rows": 12,
+      "file": "users.json"
+    },
+    {
+      "name": "user_profiles",
+      "rows": 12,
+      "file": "user_profiles.json"
+    },
+    {
+      "name": "authors",
+      "rows": 8,
+      "file": "authors.json"
+    },
+    {
+      "name": "categories",
+      "rows": 8,
+      "file": "categories.json"
+    },
+    {
+      "name": "posts",
+      "rows": 177,
+      "file": "posts.json"
+    },
+    {
+      "name": "post_categories",
+      "rows": 342,
+      "file": "post_categories.json"
+    },
+    {
+      "name": "blog_settings",
+      "rows": 1,
+      "file": "blog_settings.json"
+    },
+    {
+      "name": "rehab_centers",
+      "rows": 5,
+      "file": "rehab_centers.json"
+    },
+    {
+      "name": "insurance_catalog",
+      "rows": 25,
+      "file": "insurance_catalog.json"
+    },
+    {
+      "name": "subscription_plans",
+      "rows": 1,
+      "file": "subscription_plans.json"
+    },
+    {
+      "name": "subscriptions",
+      "rows": 2,
+      "file": "subscriptions.json"
+    },
+    {
+      "name": "client_landing_pages",
+      "rows": 1,
+      "file": "client_landing_pages.json"
+    },
+    {
+      "name": "platform_email_settings",
+      "rows": 1,
+      "file": "platform_email_settings.json"
+    }
+  ],
+  "notes": [
+    "Sanitized for local development sharing.",
+    "API keys, SMTP passwords, and Stripe IDs were cleared.",
+    "Password hashes are preserved for local login.",
+    "Load with: ./scripts/load-local-database.sh"
+  ]
+}
