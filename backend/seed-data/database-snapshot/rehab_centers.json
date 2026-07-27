@@ -20,7 +20,11 @@
     "google_maps_url": "https://maps.google.com/?q=Hazelden+Betty+Ford+Rancho+Mirage",
     "google_reviews_url": "https://www.google.com/maps/search/?api=1&query=Hazelden+Betty+Ford+Rancho+Mirage",
     "image_key": "/images/rehab/hazelden-betty-ford.webp",
-    "gallery_keys": [],
+    "gallery_keys": [
+      "/images/rehab/hazelden-betty-ford.webp",
+      "/images/rehab/caron-treatment-centers.webp",
+      "/images/rehab/sierra-tucson.webp"
+    ],
     "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
     "rating": 5.0,
     "specialties": [
@@ -92,7 +96,11 @@
     "google_maps_url": "https://maps.google.com/?q=Caron+Treatment+Centers+Wernersville",
     "google_reviews_url": "https://www.google.com/maps/search/?api=1&query=Caron+Treatment+Centers+Wernersville",
     "image_key": "/images/rehab/caron-treatment-centers.webp",
-    "gallery_keys": [],
+    "gallery_keys": [
+      "/images/rehab/caron-treatment-centers.webp",
+      "/images/rehab/hazelden-betty-ford.webp",
+      "/images/rehab/the-ranch-tennessee.webp"
+    ],
     "video_url": null,
     "rating": 5.0,
     "specialties": [
