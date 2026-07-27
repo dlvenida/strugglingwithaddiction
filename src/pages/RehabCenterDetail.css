@@ -39,12 +39,16 @@
     linear-gradient(135deg, #1a1a2e, #2d2d44);
   background-size: cover;
   background-position: center;
-  transform: scale(1.04);
+  transform: scale(1.06);
+  filter: blur(3px);
+  will-change: filter, transform;
 }
 
 .rpd-hero-shade {
   background:
-    linear-gradient(105deg, rgba(26, 26, 46, 0.88) 0%, rgba(26, 26, 46, 0.55) 48%, rgba(26, 26, 46, 0.72) 100%);
+    linear-gradient(105deg, rgba(26, 26, 46, 0.72) 0%, rgba(26, 26, 46, 0.42) 48%, rgba(26, 26, 46, 0.58) 100%);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
 }
 
 .rpd-hero-inner {
