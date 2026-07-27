@@ -47,10 +47,23 @@
 
 .post-hero-meta {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+.post-hero-meta-row {
+  display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 0.25rem;
+}
+
+.post-hero-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .post-hero-meta time {
@@ -79,13 +92,13 @@
 .post-author-link {
   font-size: 0.85rem;
   font-weight: 700;
-  color: #5FBDF6;
+  color: #fff;
   text-decoration: none;
-  transition: color 0.3s;
+  transition: opacity 0.3s;
 }
 
 .post-author-link:hover {
-  color: white;
+  opacity: 0.8;
   text-decoration: underline;
 }
 
@@ -298,7 +311,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #5FBDF6;
+  color: var(--brand-red);
   margin-bottom: 1rem;
 }
 

@@ -346,6 +346,10 @@
   text-align: left;
 }
 
+.guided-finder--sidebar .directory-tool-header .section-label {
+  color: var(--brand-red);
+}
+
 .guided-finder--sidebar .directory-tool-header h2 {
   font-size: 1.1rem;
   margin-bottom: 0;

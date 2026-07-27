@@ -160,9 +160,15 @@
 }
 
 .rehab-verified-badge {
-  background: rgba(140, 17, 38, 0.08);
-  border: 1px solid rgba(140, 17, 38, 0.35);
-  color: #8c1126;
+  gap: 0.3rem;
+  background: rgba(95, 189, 246, 0.12);
+  border: 1px solid rgba(95, 189, 246, 0.45);
+  color: var(--brand-blue);
+}
+
+.rehab-verified-badge svg {
+  font-size: 0.95em;
+  flex-shrink: 0;
 }
 
 .rehab-featured-badge {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaStar, FaSearch } from 'react-icons/fa'
+import { MdVerified } from 'react-icons/md'
 import { fetchApi, apiEnabled } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
 import { rehabLandingPath } from '../lib/rehabLanding'
@@ -482,7 +483,12 @@ export default function RehabCenters() {
                     <div className="rehab-name-row">
                       <h2>{landingPath ? <Link to={landingPath}>{center.name}</Link> : center.name}</h2>
                       {center.featured && <span className="rehab-featured-badge">Featured</span>}
-                      {center.verified_badge && <span className="rehab-verified-badge">Verified</span>}
+                      {center.verified_badge && (
+                        <span className="rehab-verified-badge">
+                          <MdVerified aria-hidden="true" />
+                          Verified
+                        </span>
+                      )}
                     </div>
                     <div className="rehab-card-meta">
                       <span className="rehab-location"><FaMapMarkerAlt aria-hidden="true" /> {center.location}</span>

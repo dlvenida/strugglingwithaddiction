@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { FaMapMarkerAlt, FaPhone, FaGlobe, FaStar, FaCheckCircle, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { MdVerified } from 'react-icons/md'
 import { apiEnabled, fetchApi } from '../lib/api'
 import { analyticsSessionKey, detectDevice, guessVisitorState } from '../lib/analytics'
 import { STATIC_CENTERS } from './RehabCenters'
@@ -278,12 +279,20 @@ export default function RehabCenterDetail() {
         <div className="container rpd-hero-inner">
           <Link to="/rehab-centers" className="rpd-back">← Back to Directory</Link>
           <div className="rpd-hero-copy">
-            <div className="rpd-badge-row">
-              {center.featured && <span className="rpd-featured">Featured</span>}
-              {center.verified_badge && <span className="rpd-verified"><FaCheckCircle aria-hidden="true" /> Verified</span>}
-            </div>
+            {center.featured && (
+              <div className="rpd-badge-row">
+                <span className="rpd-featured">Featured</span>
+              </div>
+            )}
             <div className="rpd-title-row">
-              <h1>{center.name}</h1>
+              <h1>
+                {center.name}
+                {center.verified_badge && (
+                  <span className="rpd-verified" title="Verified listing" aria-label="Verified listing">
+                    <MdVerified aria-hidden="true" />
+                  </span>
+                )}
+              </h1>
             </div>
             <div className="rpd-meta">
               <Stars rating={center.rating} />
