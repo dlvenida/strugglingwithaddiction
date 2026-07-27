@@ -1,8 +1,25 @@
 .portal-hero {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
+  min-height: 38vh;
+  display: flex;
+  align-items: center;
+  background-image: url('/images/recovery-community-hope-v2.jpg');
+  background-size: cover;
+  background-position: center;
   color: white;
   padding: 8rem 0 4.5rem;
   text-align: center;
+}
+
+.portal-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.92) 0%, rgba(26, 26, 46, 0.7) 100%);
+}
+
+.portal-hero-content {
+  position: relative;
+  z-index: 1;
 }
 
 .portal-hero .section-label {
