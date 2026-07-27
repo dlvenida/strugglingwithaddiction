@@ -1,11 +1,11 @@
 .about-hero {
   position: relative;
-  min-height: 38vh;
+  min-height: 42vh;
   display: flex;
   align-items: center;
   overflow: hidden;
   color: white;
-  padding: 8rem 0 4rem;
+  padding-top: var(--header-height);
   text-align: center;
 }
 
@@ -29,6 +29,8 @@
 .about-hero-content {
   position: relative;
   z-index: 2;
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
 }
 
 .about-hero .section-label {
@@ -245,9 +247,9 @@
     gap: 0.85rem;
   }
 
-  .about-hero {
-    min-height: 34vh;
-    padding: 6.5rem 0 3rem;
+  .about-hero-content {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 }
 

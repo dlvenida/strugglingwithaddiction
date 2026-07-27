@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { FaMapMarkerAlt, FaPhone, FaGlobe, FaStar, FaCheckCircle } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaPhone, FaGlobe, FaStar, FaCheckCircle, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { MdVerified } from 'react-icons/md'
 import { apiEnabled, fetchApi } from '../lib/api'
 import { analyticsSessionKey, detectDevice, guessVisitorState } from '../lib/analytics'
 import { STATIC_CENTERS } from './RehabCenters'
@@ -124,11 +125,60 @@ function InsuranceList({ details, names }) {
   )
 }
 
+function GallerySlideshow({ images, centerName }) {
+  const [active, setActive] = useState(0)
+  const multi = images.length > 1
+  const galleryKey = images.join('|')
+
+  useEffect(() => {
+    setActive(0)
+  }, [galleryKey])
+
+  if (!images.length) return null
+
+  const index = Math.min(active, images.length - 1)
+  const go = delta => setActive(i => (i + delta + images.length) % images.length)
+
+  return (
+    <div className={`rpd-gallery${multi ? ' is-slideshow' : ' is-single'}`}>
+      <figure className="rpd-gallery-main">
+        <img src={images[index]} alt={`${centerName} photo ${index + 1}`} />
+        {multi && (
+          <>
+            <button type="button" className="rpd-gallery-nav rpd-gallery-nav--prev" onClick={() => go(-1)} aria-label="Previous photo">
+              <FaChevronLeft aria-hidden="true" />
+            </button>
+            <button type="button" className="rpd-gallery-nav rpd-gallery-nav--next" onClick={() => go(1)} aria-label="Next photo">
+              <FaChevronRight aria-hidden="true" />
+            </button>
+            <span className="rpd-gallery-count">{index + 1} / {images.length}</span>
+          </>
+        )}
+      </figure>
+      {multi && (
+        <div className="rpd-filmstrip" role="tablist" aria-label={`${centerName} photo gallery`}>
+          {images.map((url, i) => (
+            <button
+              key={`${url}-${i}`}
+              type="button"
+              role="tab"
+              aria-selected={i === index}
+              className={`rpd-filmstrip-thumb${i === index ? ' is-active' : ''}`}
+              onClick={() => setActive(i)}
+            >
+              <img src={url} alt="" loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function RehabCenterDetail() {
   const { state, city, facility } = useParams()
   const [center, setCenter] = useState(null)
   const [error, setError] = useState('')
-  const [activeSection, setActiveSection] = useState('about')
 
   useEffect(() => {
     const path = `/rehabs/united-states/${state}/${city}/${facility}`
@@ -185,23 +235,6 @@ export default function RehabCenterDetail() {
 
   useEffect(() => {
     if (!center) return
-    const sections = ['about', 'care', 'insurance', 'accreditations', 'reviews', 'location']
-      .map(id => document.getElementById(id))
-      .filter(Boolean)
-    if (!sections.length) return
-    const observer = new IntersectionObserver(
-      entries => {
-        const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        if (visible?.target?.id) setActiveSection(visible.target.id)
-      },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0.15, 0.4] },
-    )
-    sections.forEach(section => observer.observe(section))
-    return () => observer.disconnect()
-  }, [center])
-
-  useEffect(() => {
-    if (!center) return
     const form = document.getElementById('inquiry')
     const bar = document.querySelector('.rpd-mobile-bar')
     if (!form || !bar) return
@@ -234,21 +267,9 @@ export default function RehabCenterDetail() {
   const address = center.address_line
     ? `${center.address_line}, ${center.city || ''}, ${center.state || ''} ${center.zip || ''}`.replace(/\s+/g, ' ').trim()
     : center.location
-  const highlights = [
-    ...(center.specialties || []).slice(0, 2),
-    ...(center.amenities || []).slice(0, 1),
-  ].slice(0, 3)
   const gallery = [center.image, ...(center.gallery_urls || [])].filter(Boolean)
     .filter((url, index, all) => all.indexOf(url) === index)
   const embedUrl = mapsEmbedUrl(center.google_maps_url, address)
-  const navItems = [
-    ['about', 'About'],
-    ['care', 'Care offered'],
-    ['insurance', 'Insurance'],
-    ['accreditations', 'Accreditations'],
-    ['reviews', 'Reviews'],
-    ['location', 'Location'],
-  ]
 
   return (
     <main className="rpd-page">
@@ -256,20 +277,32 @@ export default function RehabCenterDetail() {
         <div className="rpd-hero-media" style={center.image ? { backgroundImage: `url(${center.image})` } : undefined} />
         <div className="rpd-hero-shade" />
         <div className="container rpd-hero-inner">
-          <nav className="rpd-breadcrumb" aria-label="Breadcrumb">
-            <Link to="/">Home</Link>
-            <span>/</span>
-            <Link to="/rehab-centers">Rehab Centers</Link>
-            {center.state && <><span>/</span><span>{center.state}</span></>}
-            {center.city && <><span>/</span><span>{center.city}</span></>}
-          </nav>
+          <Link to="/rehab-centers" className="rpd-back">← Back to Directory</Link>
           <div className="rpd-hero-copy">
-            <div className="rpd-badge-row">
-              {center.featured && <span className="rpd-featured">Featured</span>}
-              {center.verified_badge && <span className="rpd-verified"><FaCheckCircle aria-hidden="true" /> Verified</span>}
-            </div>
+            {center.featured && (
+              <div className="rpd-badge-row">
+                <span className="rpd-featured">Featured</span>
+              </div>
+            )}
             <div className="rpd-title-row">
-              <h1>{center.name}</h1>
+              <h1>
+                {center.verified_badge ? (() => {
+                  const parts = String(center.name).trim().split(/\s+/)
+                  const last = parts.pop()
+                  const lead = parts.join(' ')
+                  return (
+                    <>
+                      {lead ? `${lead} ` : ''}
+                      <span className="rpd-title-end">
+                        {last}
+                        <span className="rpd-verified" title="Verified listing" aria-label="Verified listing">
+                          <MdVerified aria-hidden="true" />
+                        </span>
+                      </span>
+                    </>
+                  )
+                })() : center.name}
+              </h1>
             </div>
             <div className="rpd-meta">
               <Stars rating={center.rating} />
@@ -285,38 +318,10 @@ export default function RehabCenterDetail() {
       </div>
 
       {gallery.length > 0 && (
-        <div className="container rpd-gallery">
-          <div className={`rpd-gallery-grid ${gallery.length === 1 ? 'is-single' : gallery.length === 2 ? 'is-duo' : ''}`}>
-            {gallery.slice(0, 3).map((url, index) => (
-              <figure key={url} className={index === 0 ? 'is-main' : ''}>
-                <img src={url} alt="" />
-                {index === 2 && gallery.length > 3 && <span className="rpd-gallery-more">+{gallery.length - 2} photos</span>}
-              </figure>
-            ))}
-            {center.video_url && (
-              <a className="rpd-video-chip" href={center.video_url} target="_blank" rel="noreferrer">Watch facility video</a>
-            )}
-          </div>
-        </div>
-      )}
-
-      {highlights.length > 0 && (
-        <div className="rpd-highlights">
-          <div className="container rpd-highlights-inner">
-            {highlights.map(item => <span key={item}>{item}</span>)}
-          </div>
-        </div>
-      )}
-
-      <div className="rpd-nav-wrap">
         <div className="container">
-          <nav className="rpd-section-nav" aria-label="Profile sections">
-            {navItems.map(([id, label]) => (
-              <a key={id} href={`#${id}`} className={activeSection === id ? 'is-active' : ''}>{label}</a>
-            ))}
-          </nav>
+          <GallerySlideshow images={gallery} centerName={center.name} />
         </div>
-      </div>
+      )}
 
       <div className="container rpd-layout">
         <div className="rpd-content">

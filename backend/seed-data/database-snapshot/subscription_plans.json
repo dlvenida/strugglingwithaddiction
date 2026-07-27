@@ -1,0 +1,19 @@
+[
+  {
+    "id": 1,
+    "name": "Base listing",
+    "stripe_price_id_monthly": null,
+    "stripe_price_id_yearly": null,
+    "is_active": true,
+    "sort_order": 0,
+    "features": {
+      "blog": true,
+      "listing": true,
+      "price_year": "99",
+      "price_month": "9.99",
+      "landing_page": true
+    },
+    "created_at": "2026-07-23T21:59:02.470328+00:00",
+    "updated_at": "2026-07-23T21:59:02.470328+00:00"
+  }
+]

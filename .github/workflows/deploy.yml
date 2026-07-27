@@ -1,5 +1,9 @@
-# Auto-deploy on push to main: Railway (API + static site + admin).
+# Auto-deploy on push to main: Railway monolith (API + public site + admin).
 # Required secrets: RAILWAY_TOKEN, RAILWAY_SERVICE_ID — see DEPLOYMENT.md
+#
+# Deploys from repo root with /railway.toml + /Dockerfile so frontends are
+# built inside Docker. Do not deploy from backend/ alone — backend/static/ is
+# gitignored and would ship an API-only image.
 
 name: Deploy
 
@@ -19,11 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
       - name: Validate Railway secrets
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -38,19 +37,16 @@ jobs:
             exit 1
           fi
 
-      - name: Build frontends into backend/static
-        run: ./scripts/prepare-railway-static.sh
-
       - name: Install Railway CLI
         run: npm install -g @railway/cli
 
-      - name: Deploy to Railway
-        working-directory: backend
+      - name: Deploy monolith to Railway
         run: railway up --ci --service "${{ secrets.RAILWAY_SERVICE_ID }}" --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
       - name: Sync blog posts to database
+        continue-on-error: true
         working-directory: backend
         run: railway run --service "${{ secrets.RAILWAY_SERVICE_ID }}" python scripts/sync_blog.py
         env:

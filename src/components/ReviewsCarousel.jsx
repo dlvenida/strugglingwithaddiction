@@ -112,7 +112,6 @@ export default function ReviewsCarousel({ center }) {
       <section id="reviews" className="rpd-section">
         <div className="rpd-reviews-head">
           <h2>Reviews</h2>
-          <Stars rating={center?.rating} />
         </div>
         <p className="rpd-muted">No testimonials published yet.</p>
         {center?.google_reviews_url && (
@@ -140,7 +139,6 @@ export default function ReviewsCarousel({ center }) {
             </p>
           )}
         </div>
-        <Stars rating={payload.rating ?? center?.rating} />
       </div>
 
       <div className="rpd-review-carousel" data-cols={visibleCount}>

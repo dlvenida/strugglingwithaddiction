@@ -3,8 +3,16 @@
 .legal-hero {
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
   color: white;
-  padding: 8rem 0 5rem;
+  min-height: 42vh;
+  display: flex;
+  align-items: center;
+  padding-top: var(--header-height);
   text-align: center;
+}
+
+.legal-hero > .container {
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
 }
 
 .legal-hero .section-label {
@@ -123,8 +131,9 @@
 
 /* ── Responsive ──────────────────────────── */
 @media (max-width: 640px) {
-  .legal-hero {
-    padding: 6rem 0 3.5rem;
+  .legal-hero > .container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
   }
 
   .legal-body {

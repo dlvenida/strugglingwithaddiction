@@ -86,15 +86,21 @@ export default function BlogPost() {
           <Link to="/blog" className="post-back">← Back to Blog</Link>
           <h1 dangerouslySetInnerHTML={{ __html: post.title }} />
           <div className="post-hero-meta">
-            <time dateTime={post.date}>{formatDate(post.date)}</time>
-            {author && (
-              <Link to={`/author/${author.slug}`} className="post-author-link">
-                By {author.name}
-              </Link>
+            <div className="post-hero-meta-row">
+              <time dateTime={post.date}>{formatDate(post.date)}</time>
+              {author && (
+                <Link to={`/author/${author.slug}`} className="post-author-link">
+                  By {author.name}
+                </Link>
+              )}
+            </div>
+            {post.categoryNames?.filter(c => c.name !== 'Uncategorized').length > 0 && (
+              <div className="post-hero-cats">
+                {post.categoryNames.filter(c => c.name !== 'Uncategorized').map(c => (
+                  <Link key={c.id} to={`/blog?category=${c.id}`} className="post-cat-tag">{c.name}</Link>
+                ))}
+              </div>
             )}
-            {post.categoryNames?.filter(c => c.name !== 'Uncategorized').map(c => (
-              <Link key={c.id} to={`/blog?category=${c.id}`} className="post-cat-tag">{c.name}</Link>
-            ))}
           </div>
         </div>
       </section>

@@ -1,29 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaGlobe, FaStar, FaSearch } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaStar, FaSearch } from 'react-icons/fa'
+import { MdVerified } from 'react-icons/md'
 import { fetchApi, apiEnabled } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
 import { rehabLandingPath } from '../lib/rehabLanding'
 import RehabSearch from '../components/RehabSearch'
 import './RehabCenters.css'
-
-function VerifiedBadge() {
-  return (
-    <span className="rehab-verified-badge" title="Verified listing">
-      <svg className="rehab-verified-badge-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-        <path
-          fill="currentColor"
-          d="M10 1.2l1.55 1.12 1.86-.42.72 1.77 1.77.72-.42 1.86L17.6 8.8l-1.12 1.55 1.12 1.55-1.12 1.55.42 1.86-1.77.72-.72 1.77-1.86-.42L10 18.8l-1.55-1.12-1.86.42-.72-1.77-1.77-.72.42-1.86L3.4 11.9l1.12-1.55L3.4 8.8l1.12-1.55-.42-1.86 1.77-.72.72-1.77 1.86.42L10 1.2z"
-        />
-        <path
-          fill="#fff"
-          d="M8.15 10.35l-1.35-1.35-1.05 1.05 2.4 2.4 4.5-4.5-1.05-1.05-3.45 3.45z"
-        />
-      </svg>
-      Verified
-    </span>
-  )
-}
 
 export const STATIC_CENTERS = [
   {
@@ -35,10 +18,10 @@ export const STATIC_CENTERS = [
     address_line: '39000 Bob Hope Drive',
     zip: '92270',
     phone: '1-866-831-5700',
-    contact_email: 'info@hazeldenbettyford.org',
+    contact_email: 'hazelden@example.com',
     website: 'https://www.hazeldenbettyford.org',
     image: '/images/rehab/hazelden-betty-ford.webp',
-    gallery_urls: ['/images/rehab/hazelden-betty-ford.webp', '/images/rehab/caron-treatment-centers.webp', '/images/rehab/sierra-tucson.webp'],
+    gallery_urls: ['/images/rehab/hazelden-betty-ford.webp'],
     specialties: ['Inpatient Residential', 'Medical Detox', 'Dual Diagnosis', 'Telehealth'],
     levels_of_care: ['Detox', 'Residential', 'PHP', 'IOP', 'Outpatient'],
     amenities: ['Private Rooms Available', 'Family Program', 'Yoga & Meditation'],
@@ -78,7 +61,7 @@ export const STATIC_CENTERS = [
     contact_email: 'caron@example.com',
     website: 'https://www.caron.org',
     image: '/images/rehab/caron-treatment-centers.webp',
-    gallery_urls: ['/images/rehab/caron-treatment-centers.webp', '/images/rehab/hazelden-betty-ford.webp', '/images/rehab/the-ranch-tennessee.webp'],
+    gallery_urls: ['/images/rehab/caron-treatment-centers.webp'],
     specialties: ['Medical Detox', 'Inpatient', 'Dual Diagnosis', 'Executive Program'],
     levels_of_care: ['Detox', 'Residential', 'Extended Care', 'Outpatient'],
     amenities: ['Executive Track', 'Family Support', 'Fitness Program'],
@@ -374,75 +357,9 @@ function filterCenters(centers, { query, state, service, insurance }) {
 // NOTE: Backend endpoint used for leads:
 // POST /api/rehab-centers/{slug}/leads body: { full_name, email, phone?, message, source_url? }
 
-function LeadFormModal({ center, onClose }) {
-  const [submitted, setSubmitted] = useState(false)
-  const [error, setError] = useState('')
-  const [form, setForm] = useState({
-    full_name: '',
-    email: '',
-    phone: '',
-    message: '',
-  })
-
-  const handleSubmit = async e => {
-    e.preventDefault()
-    setError('')
-    if (apiEnabled()) {
-      try {
-        const slug = center.slug || center.id
-        await fetchApi(`/api/rehab-centers/${slug}/leads`, {
-          method: 'POST',
-          body: JSON.stringify({
-            ...form,
-            source_url: window.location.href,
-          }),
-        })
-        setSubmitted(true)
-      } catch (err) {
-        setError(err.message)
-      }
-    } else {
-      setSubmitted(true)
-    }
-  }
-
-  return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Close">×</button>
-        {submitted ? (
-          <div className="modal-success">
-            <div className="modal-success-icon">✓</div>
-            <h3>Inquiry Sent!</h3>
-            <p>Thank you for your interest in <strong>{center.name}</strong>. They will reach out to you soon.</p>
-            <button className="btn" onClick={onClose}>Close</button>
-          </div>
-        ) : (
-          <>
-            <div className="modal-header">
-              <span className="section-label">Contact Center</span>
-              <h3>{center.name}</h3>
-              <p>Fill out the form below and they will respond to your inquiry.</p>
-            </div>
-            {error && <p style={{ color: '#8c1126', marginBottom: '0.5rem' }}>{error}</p>}
-            <form className="modal-form" onSubmit={handleSubmit}>
-              <label>Your Name<input type="text" required value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} /></label>
-              <label>Email<input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} /></label>
-              <label>Phone<input type="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} /></label>
-              <label>Message<textarea rows="4" required value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="Tell us about yourself and what you're looking for..." /></label>
-              <button type="submit" className="btn">Send Inquiry</button>
-            </form>
-          </>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function RehabCenters() {
   const [searchParams] = useSearchParams()
   const [claimCenter, setClaimCenter] = useState(null)
-  const [leadCenter, setLeadCenter] = useState(null)
   const [centers, setCenters] = useState(STATIC_CENTERS)
   const [loading, setLoading] = useState(apiEnabled())
   const [query, setQuery] = useState('')
@@ -566,8 +483,12 @@ export default function RehabCenters() {
                     <div className="rehab-name-row">
                       <h2>{landingPath ? <Link to={landingPath}>{center.name}</Link> : center.name}</h2>
                       {center.featured && <span className="rehab-featured-badge">Featured</span>}
-                      {center.verified_badge && <VerifiedBadge />}
-                      {center.claimed && <span className="rehab-claimed-badge">✓ Claimed</span>}
+                      {center.verified_badge && (
+                        <span className="rehab-verified-badge">
+                          <MdVerified aria-hidden="true" />
+                          Verified
+                        </span>
+                      )}
                     </div>
                     <div className="rehab-card-meta">
                       <span className="rehab-location"><FaMapMarkerAlt aria-hidden="true" /> {center.location}</span>
@@ -594,31 +515,16 @@ export default function RehabCenters() {
                 </div>
                 <p className="rehab-description">{center.description}</p>
                 <div className="rehab-card-footer">
-                  {center.claimed && (center.phone || center.contact_email) ? (
+                  {center.claimed && center.phone ? (
                     <>
                       <div className="rehab-card-contacts">
-                        {center.phone && (
-                          <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="rehab-contact">
-                            <FaPhone aria-hidden="true" /> {center.phone}
-                          </a>
-                        )}
+                        <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="rehab-contact"><FaPhone aria-hidden="true" /> {center.phone}</a>
                         {center.contact_email && (
-                          <a href={`mailto:${center.contact_email}`} className="rehab-contact">
-                            <FaEnvelope aria-hidden="true" /> {center.contact_email}
-                          </a>
-                        )}
-                        {center.website && (
-                          <a href={center.website} target="_blank" rel="noopener noreferrer" className="rehab-contact">
-                            <FaGlobe aria-hidden="true" /> Visit Website
-                          </a>
+                          <a href={`mailto:${center.contact_email}`} className="rehab-contact"><FaEnvelope aria-hidden="true" /> {center.contact_email}</a>
                         )}
                       </div>
                       <div className="rehab-card-actions">
-                        <button type="button" className="btn rehab-action-btn" onClick={() => setLeadCenter(center)}>Send Inquiry</button>
-                        {landingPath && <Link to={landingPath} className="btn rehab-action-btn rehab-action-btn--primary">View</Link>}
-                        {center.phone && (
-                          <a href={`tel:${center.phone.replace(/\D/g, '')}`} className="btn rehab-action-btn">Call Now</a>
-                        )}
+                        {landingPath && <Link to={landingPath} className="btn rehab-action-btn">View</Link>}
                       </div>
                     </>
                   ) : (
@@ -647,7 +553,6 @@ export default function RehabCenters() {
       </section>
 
       {claimCenter && <ClaimModal center={claimCenter} onClose={() => setClaimCenter(null)} />}
-      {leadCenter && <LeadFormModal center={leadCenter} onClose={() => setLeadCenter(null)} />}
     </main>
   )
 }

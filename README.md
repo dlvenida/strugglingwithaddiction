@@ -68,14 +68,16 @@ cp backend/.env.example backend/.env
 
 Leave `VITE_API_URL` **empty** locally — Vite proxies `/api` to the backend (no CORS issues).
 
-### 3. Start Postgres
+### 3. Start Postgres + load shared database
 
 ```bash
 docker compose up -d postgres
+./scripts/load-local-database.sh
 ```
 
-Postgres runs on **localhost:5433** (see `docker-compose.yml`).
-
+Postgres runs on **localhost:5433** (see `docker-compose.yml`). The load script
+imports the shared snapshot under `backend/seed-data/database-snapshot/` so
+everyone gets the same posts, rehab centers, insurance catalog, and sample users.
 ### 4. Run everything (easiest)
 
 ```bash
@@ -109,15 +111,21 @@ On first boot the API creates a default admin:
 
 Change these via `ADMIN_BOOTSTRAP_*` in `backend/.env` **before** first run, or change password in admin after login.
 
-### 6. Seed blog posts (optional)
+### 6. Seed / refresh data
+
+Preferred: shared snapshot (already covered in step 3):
+
+```bash
+./scripts/load-local-database.sh
+```
+
+Optional blog-only JSON seed:
 
 ```bash
 node scripts/extract-posts.mjs          # pull from WordPress export (optional)
 cd backend && source .venv/bin/activate
 python scripts/seed_from_json.py
 ```
-
-Rehab centers are seeded automatically on first API start.
 
 ---
 
@@ -183,8 +191,11 @@ Public routes include `/api/posts`, `/api/rehab-centers`, `/api/rehab/claims`. A
 | `npm run dev:api` | API (requires venv) |
 | `npm run build` | Production build (public) |
 | `./scripts/dev.sh` | Postgres + API + both frontends |
+| `./scripts/load-local-database.sh` | Load shared DB snapshot into local Postgres |
 | `node scripts/extract-posts.mjs` | Import blog JSON from WordPress |
 | `python backend/scripts/seed_from_json.py` | Seed posts into DB |
+| `python backend/scripts/export_database_snapshot.py` | Refresh shareable DB snapshot from local DB |
+| `python backend/scripts/import_database_snapshot.py` | Import snapshot into `DATABASE_URL` |
 
 ---
 

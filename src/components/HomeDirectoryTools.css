@@ -139,6 +139,15 @@
 .guided-finder-submit {
   min-width: 10rem;
   text-align: center;
+  background-color: var(--brand-blue);
+  border-color: var(--brand-blue);
+  color: var(--white);
+}
+
+.guided-finder-submit:hover {
+  background-color: #3aa0e0;
+  border-color: #3aa0e0;
+  color: var(--white);
 }
 
 /* ── Full-width homepage variant ────────────── */
@@ -335,6 +344,10 @@
 .guided-finder--sidebar .directory-tool-header {
   margin-bottom: 1.25rem;
   text-align: left;
+}
+
+.guided-finder--sidebar .directory-tool-header .section-label {
+  color: var(--brand-red);
 }
 
 .guided-finder--sidebar .directory-tool-header h2 {

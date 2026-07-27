@@ -65,6 +65,9 @@ REHAB_SEED = [
         "google_reviews_url": "https://www.google.com/maps/search/?api=1&query=Hazelden+Betty+Ford+Rancho+Mirage",
         "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
         "image_key": "/images/rehab/hazelden-betty-ford.webp",
+        "gallery_keys": [
+            "/images/rehab/hazelden-betty-ford.webp",
+        ],
         "specialties": ["Inpatient Residential", "Medical Detox", "Dual Diagnosis", "Telehealth"],
         "levels_of_care": ["Detox", "Residential", "IOP", "Outpatient"],
         "insurances": ["Aetna", "Blue Cross Blue Shield", "Cigna", "UnitedHealthcare", "Private Pay"],
@@ -99,6 +102,9 @@ REHAB_SEED = [
         "google_maps_url": "https://maps.google.com/?q=Caron+Treatment+Centers+Wernersville",
         "google_reviews_url": "https://www.google.com/maps/search/?api=1&query=Caron+Treatment+Centers+Wernersville",
         "image_key": "/images/rehab/caron-treatment-centers.webp",
+        "gallery_keys": [
+            "/images/rehab/caron-treatment-centers.webp",
+        ],
         "specialties": ["Medical Detox", "Inpatient", "Dual Diagnosis", "Executive Program"],
         "levels_of_care": ["Detox", "Residential", "PHP", "IOP"],
         "insurances": ["Aetna", "Blue Cross Blue Shield", "Cigna", "UnitedHealthcare", "Tricare", "Private Pay"],
@@ -292,9 +298,13 @@ def seed_rehab_centers(db: Session) -> None:
             "address_line", "city", "state", "zip", "contact_email", "google_maps_url",
             "google_reviews_url", "video_url", "levels_of_care", "insurances", "amenities",
             "accreditations", "testimonials", "location_display", "phone", "website", "description",
+            "gallery_keys",
         ):
             if item.get(field) is not None and not getattr(center, field, None):
                 setattr(center, field, item[field])
+        # Keep claimed demo galleries aligned to this listing's own images only.
+        if item.get("gallery_keys") is not None and item.get("claimed"):
+            center.gallery_keys = item["gallery_keys"]
         # Keep demo placeholder insurance lists aligned with the USA catalog.
         old_demo = {"most major insurance", "private pay", "blue cross"}
         current = {str(x).lower() for x in (center.insurances or [])}
