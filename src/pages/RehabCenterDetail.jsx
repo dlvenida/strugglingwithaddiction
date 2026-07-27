@@ -234,10 +234,6 @@ export default function RehabCenterDetail() {
   const address = center.address_line
     ? `${center.address_line}, ${center.city || ''}, ${center.state || ''} ${center.zip || ''}`.replace(/\s+/g, ' ').trim()
     : center.location
-  const highlights = [
-    ...(center.specialties || []).slice(0, 2),
-    ...(center.amenities || []).slice(0, 1),
-  ].slice(0, 3)
   const gallery = [center.image, ...(center.gallery_urls || [])].filter(Boolean)
     .filter((url, index, all) => all.indexOf(url) === index)
   const embedUrl = mapsEmbedUrl(center.google_maps_url, address)
@@ -296,14 +292,6 @@ export default function RehabCenterDetail() {
             {center.video_url && (
               <a className="rpd-video-chip" href={center.video_url} target="_blank" rel="noreferrer">Watch facility video</a>
             )}
-          </div>
-        </div>
-      )}
-
-      {highlights.length > 0 && (
-        <div className="rpd-highlights">
-          <div className="container rpd-highlights-inner">
-            {highlights.map(item => <span key={item}>{item}</span>)}
           </div>
         </div>
       )}

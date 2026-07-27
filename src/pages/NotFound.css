@@ -1,14 +1,14 @@
 /* ── 404 Hero ─────────────────────────────── */
 .not-found-hero {
   position: relative;
-  min-height: 58vh;
+  min-height: 42vh;
   display: flex;
   align-items: center;
   background-image: url('/images/Mindfulness-in-Recovery-Cultivating-Inner-Peace-After-Addiction_2426878099.webp');
   background-size: cover;
   background-position: center;
   color: white;
-  padding-top: 72px;
+  padding-top: var(--header-height);
   text-align: center;
 }
 
@@ -26,7 +26,7 @@
   position: relative;
   z-index: 1;
   max-width: 680px;
-  padding: 4rem 0 5rem;
+  padding: 3.5rem 0;
 }
 
 .not-found-code {
@@ -160,12 +160,8 @@
     grid-template-columns: 1fr;
   }
 
-  .not-found-hero {
-    min-height: auto;
-  }
-
   .not-found-hero-content {
-    padding: 3rem 0 4rem;
+    padding: 2rem 0;
   }
 
   .not-found-body {

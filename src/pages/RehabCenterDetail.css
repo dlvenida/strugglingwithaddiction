@@ -20,11 +20,12 @@
 
 .rpd-hero {
   position: relative;
-  min-height: clamp(280px, 38vh, 420px);
+  min-height: 42vh;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   overflow: hidden;
   color: #fff;
+  padding-top: var(--header-height);
 }
 
 .rpd-hero-media,
@@ -50,7 +51,7 @@
 .rpd-hero-inner {
   position: relative;
   z-index: 1;
-  padding: 5.75rem 0 2.5rem;
+  padding: 3.5rem 0;
   width: 100%;
 }
 
@@ -245,39 +246,11 @@
   text-decoration: none;
 }
 
-.rpd-highlights {
-  margin-top: 1.25rem;
-  border-block: 1px solid var(--rpd-line);
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.rpd-highlights-inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.5rem;
-  padding: 0.95rem 0;
-  font-size: 0.92rem;
-  color: var(--rpd-muted);
-}
-
-.rpd-highlights-inner span::before {
-  content: '';
-  display: inline-block;
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 50%;
-  background: var(--rpd-calm);
-  margin-right: 0.65rem;
-  vertical-align: middle;
-}
-
 .rpd-nav-wrap {
   position: sticky;
-  top: 72px;
+  top: var(--header-height);
   z-index: 5;
-  backdrop-filter: blur(12px);
-  background: rgba(250, 250, 248, 0.94);
-  border-bottom: 1px solid var(--rpd-line);
+  background: #fafaf8;
 }
 
 .rpd-section-nav {
@@ -843,7 +816,7 @@
   }
 
   .rpd-nav-wrap {
-    top: 72px;
+    top: var(--header-height);
   }
 
   .rpd-mobile-bar {
@@ -897,12 +870,8 @@
 }
 
 @media (max-width: 720px) {
-  .rpd-hero {
-    min-height: 260px;
-  }
-
   .rpd-hero-inner {
-    padding: 4.75rem 0 1.75rem;
+    padding: 2rem 0;
   }
 
   .rpd-hero-actions .btn {
