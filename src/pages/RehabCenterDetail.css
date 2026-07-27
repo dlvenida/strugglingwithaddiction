@@ -362,7 +362,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: 0.72rem;
-  color: var(--rpd-calm);
+  color: var(--brand-blue);
 }
 
 .rpd-form h2,
@@ -441,7 +441,7 @@
 }
 
 .rpd-side-card .rpd-form-eyebrow {
-  color: var(--rpd-calm);
+  color: var(--brand-blue);
   margin-bottom: 0.55rem;
 }
 
