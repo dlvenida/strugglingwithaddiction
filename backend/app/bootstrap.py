@@ -300,8 +300,17 @@ def seed_rehab_centers(db: Session) -> None:
             "accreditations", "testimonials", "location_display", "phone", "website", "description",
             "gallery_keys",
         ):
-            if item.get(field) is not None and not getattr(center, field, None):
-                setattr(center, field, item[field])
+            # Fill missing values; for claimed demo listings, keep screenshot-critical fields aligned.
+            value = item.get(field)
+            if value is None:
+                continue
+            current = getattr(center, field, None)
+            if not current or (item.get("claimed") and field in {
+                "contact_email", "address_line", "city", "state", "zip",
+                "gallery_keys", "google_maps_url", "google_reviews_url",
+                "levels_of_care", "insurances", "amenities", "accreditations", "testimonials",
+            }):
+                setattr(center, field, value)
         # Keep claimed demo galleries aligned to this listing's own images only.
         if item.get("gallery_keys") is not None and item.get("claimed"):
             center.gallery_keys = item["gallery_keys"]
@@ -315,11 +324,17 @@ def seed_rehab_centers(db: Session) -> None:
             center.contact_visible = True
             if item.get("verified_badge"):
                 center.verified_badge = True
-            if item.get("owner_email"):
-                _ensure_claimed_owner(db, center, item["owner_email"], item.get("owner_name") or center.name)
         if center.listing_status != ListingStatus.published and item.get("listing_status") == ListingStatus.published:
             center.listing_status = ListingStatus.published
-    db.commit()
+        # Persist listing fields even if owner/subscription wiring fails.
+        db.commit()
+        if item.get("claimed") and item.get("owner_email"):
+            try:
+                _ensure_claimed_owner(db, center, item["owner_email"], item.get("owner_name") or center.name)
+                db.commit()
+            except Exception:
+                db.rollback()
+                logger.exception("Failed to ensure claimed owner for %s", item.get("slug"))
 
 
 def seed_insurance_catalog(db: Session) -> None:
