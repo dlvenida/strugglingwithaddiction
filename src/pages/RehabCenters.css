@@ -263,6 +263,10 @@
   color: #6b7280;
   text-decoration: none;
   transition: color 0.3s;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .rehab-contact svg { color: #5FBDF6; }
@@ -437,6 +441,12 @@
   .rehab-claim-btn { width: 100%; text-align: center; }
   .form-row { grid-template-columns: 1fr; }
   .rehab-card-footer { flex-direction: column; align-items: stretch; }
+  .rehab-card-contacts {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.55rem;
+    width: 100%;
+  }
   .rehab-card-actions {
     margin-left: 0;
     width: 100%;
