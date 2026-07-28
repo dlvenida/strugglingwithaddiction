@@ -237,6 +237,9 @@ export default function Blog() {
                         </button>
                       ))}
                     </div>
+                    <h2>
+                      <Link to={`/blog/${post.slug}`} dangerouslySetInnerHTML={{ __html: post.title }} />
+                    </h2>
                     {authorMap[post.authorId] && (
                       <Link
                         to={`/author/${authorMap[post.authorId].slug}`}
@@ -245,9 +248,6 @@ export default function Blog() {
                         By {authorMap[post.authorId].name}
                       </Link>
                     )}
-                    <h2>
-                      <Link to={`/blog/${post.slug}`} dangerouslySetInnerHTML={{ __html: post.title }} />
-                    </h2>
                     <p className="blog-card-excerpt">
                       {(post.excerpt || '').slice(0, 140)}{(post.excerpt || '').length > 140 ? '…' : ''}
                     </p>

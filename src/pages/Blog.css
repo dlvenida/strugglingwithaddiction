@@ -302,8 +302,10 @@
 .blog-card-author {
   font-size: 0.8rem;
   color: #000;
-  font-weight: 700;
+  font-weight: 400;
+  font-style: italic;
   text-decoration: none;
+  margin-top: calc(2px - 0.6rem);
   transition: color 0.3s;
 }
 
