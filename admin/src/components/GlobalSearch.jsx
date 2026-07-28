@@ -31,7 +31,9 @@ function resolvePath(hit, role) {
     case 'page':
       return hit.id
     case 'post':
-      return role === 'client' ? '/client/posts' : `/${role === 'admin' ? 'admin' : 'editor'}/posts/${hit.id}/edit`
+      // Client posts UI is hidden for now
+      if (role === 'client') return '/client'
+      return `/${role === 'admin' ? 'admin' : 'editor'}/posts/${hit.id}/edit`
     case 'center':
       return `/admin/rehab/${hit.id}/edit`
     case 'user':
