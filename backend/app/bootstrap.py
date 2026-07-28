@@ -13,7 +13,7 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 from app.models.billing import BillingInterval, Subscription, SubscriptionPlan
 from app.models.insurance import InsuranceCatalog
 from app.models.profile import UserProfile
-from app.models.rehab import RehabCenter, ListingStatus, CenterSource
+from app.models.rehab import RehabCenter, ListingStatus, CenterSource, ClaimStatus, RehabCenterClaim
 from app.models.user import User, UserRole
 
 USA_INSURANCE_SEED = [
@@ -335,6 +335,39 @@ def seed_rehab_centers(db: Session) -> None:
             except Exception:
                 db.rollback()
                 logger.exception("Failed to ensure claimed owner for %s", item.get("slug"))
+
+
+def activate_claimed_providers(db: Session) -> None:
+    """Ensure owners of claimed listings (and approved claims) can sign in."""
+    claimed_centers = (
+        db.query(RehabCenter)
+        .filter(RehabCenter.claimed.is_(True), RehabCenter.owner_user_id.isnot(None))
+        .all()
+    )
+    activated = 0
+    for center in claimed_centers:
+        user = db.query(User).filter(User.id == center.owner_user_id).first()
+        if user and user.role == UserRole.client and not user.is_active:
+            user.is_active = True
+            activated += 1
+
+    approved_claims = (
+        db.query(RehabCenterClaim)
+        .filter(
+            RehabCenterClaim.status == ClaimStatus.approved,
+            RehabCenterClaim.submitter_user_id.isnot(None),
+        )
+        .all()
+    )
+    for claim in approved_claims:
+        user = db.query(User).filter(User.id == claim.submitter_user_id).first()
+        if user and user.role == UserRole.client and not user.is_active:
+            user.is_active = True
+            activated += 1
+
+    if activated:
+        db.commit()
+        logger.info("Activated %s claimed/approved provider account(s)", activated)
 
 
 def seed_insurance_catalog(db: Session) -> None:

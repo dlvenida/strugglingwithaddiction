@@ -155,7 +155,7 @@ def start_claim(body: ClaimStartRequest, db: Annotated[Session, Depends(get_db)]
         context={
             "name": body.full_name,
             "email": email,
-            "login_url": f"{settings.admin_site_url}/login",
+            "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
         },
         user_id=user.id,
         rehab_center_id=center.id,
@@ -445,7 +445,7 @@ def grant_claim_on_payment(db: Session, *, user_id: int, claim_ticket: str | Non
                 context={
                     "name": claim.full_name if claim else user.email,
                     "center_name": center.name,
-                    "login_url": f"{settings.admin_site_url}/login",
+                    "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
                     "billing_url": f"{settings.admin_site_url}/client/billing",
                     "receipt_url": f"{settings.admin_site_url}/client/billing",
                 },
