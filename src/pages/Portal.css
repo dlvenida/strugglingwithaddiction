@@ -1,6 +1,7 @@
 .portal-hero {
   position: relative;
-  min-height: max(42vh, 27.75rem);
+  height: var(--page-hero-height);
+  min-height: var(--page-hero-height);
   display: flex;
   align-items: center;
   background-image: url('/images/blog/US-Hospitals-Should-Have-Addiction-Specialist-ER-Overdose-Prevention_1043242537.webp');

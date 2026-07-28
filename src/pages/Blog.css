@@ -1,7 +1,8 @@
 /* ── Hero ─────────────────────────────────── */
 .blog-hero {
   position: relative;
-  min-height: max(42vh, 27.75rem);
+  height: var(--page-hero-height);
+  min-height: var(--page-hero-height);
   display: flex;
   align-items: center;
   background-image: url('/images/Mindfulness-in-Recovery-Cultivating-Inner-Peace-After-Addiction_2426878099.webp');
