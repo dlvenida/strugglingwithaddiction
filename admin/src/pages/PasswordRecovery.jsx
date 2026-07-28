@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../api'
+import { getPublicSiteUrl } from '../lib/publicSite'
 
 export default function PasswordRecovery() {
   const [params] = useSearchParams()
@@ -9,6 +10,7 @@ export default function PasswordRecovery() {
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const portalUrl = `${getPublicSiteUrl() || ''}/portal`
 
   async function submit(e) {
     e.preventDefault()
@@ -33,6 +35,11 @@ export default function PasswordRecovery() {
         {message && <p className="success">{message}</p>}
         <button className="btn btn-primary" type="submit">{token ? 'Update password' : 'Email reset link'}</button>
         <Link to="/login">Back to login</Link>
+        {token && message && (
+          <p className="success" style={{ marginTop: '1rem' }}>
+            <a href={portalUrl}>Sign in at the provider portal</a>
+          </p>
+        )}
       </form>
     </main>
   )

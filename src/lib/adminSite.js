@@ -21,7 +21,12 @@ export function superadminLoginUrl() {
   return `${getAdminSiteUrl()}/swa-login/`
 }
 
-/** Same-origin public path that redirects to the provider platform. */
+/** Public rehab provider login path. */
 export function providerPortalPath() {
-  return '/provider'
+  return '/portal'
+}
+
+/** Path inside the admin SPA for the provider dashboard. */
+export function providerDashboardPath() {
+  return '/client'
 }

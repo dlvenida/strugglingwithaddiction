@@ -13,7 +13,7 @@ _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 from app.models.billing import BillingInterval, Subscription, SubscriptionPlan
 from app.models.insurance import InsuranceCatalog
 from app.models.profile import UserProfile
-from app.models.rehab import RehabCenter, ListingStatus, CenterSource
+from app.models.rehab import RehabCenter, ListingStatus, CenterSource, ClaimStatus, RehabCenterClaim
 from app.models.user import User, UserRole
 
 USA_INSURANCE_SEED = [
@@ -300,8 +300,17 @@ def seed_rehab_centers(db: Session) -> None:
             "accreditations", "testimonials", "location_display", "phone", "website", "description",
             "gallery_keys",
         ):
-            if item.get(field) is not None and not getattr(center, field, None):
-                setattr(center, field, item[field])
+            # Fill missing values; for claimed demo listings, keep screenshot-critical fields aligned.
+            value = item.get(field)
+            if value is None:
+                continue
+            current = getattr(center, field, None)
+            if not current or (item.get("claimed") and field in {
+                "contact_email", "address_line", "city", "state", "zip",
+                "gallery_keys", "google_maps_url", "google_reviews_url",
+                "levels_of_care", "insurances", "amenities", "accreditations", "testimonials",
+            }):
+                setattr(center, field, value)
         # Keep claimed demo galleries aligned to this listing's own images only.
         if item.get("gallery_keys") is not None and item.get("claimed"):
             center.gallery_keys = item["gallery_keys"]
@@ -315,11 +324,50 @@ def seed_rehab_centers(db: Session) -> None:
             center.contact_visible = True
             if item.get("verified_badge"):
                 center.verified_badge = True
-            if item.get("owner_email"):
-                _ensure_claimed_owner(db, center, item["owner_email"], item.get("owner_name") or center.name)
         if center.listing_status != ListingStatus.published and item.get("listing_status") == ListingStatus.published:
             center.listing_status = ListingStatus.published
-    db.commit()
+        # Persist listing fields even if owner/subscription wiring fails.
+        db.commit()
+        if item.get("claimed") and item.get("owner_email"):
+            try:
+                _ensure_claimed_owner(db, center, item["owner_email"], item.get("owner_name") or center.name)
+                db.commit()
+            except Exception:
+                db.rollback()
+                logger.exception("Failed to ensure claimed owner for %s", item.get("slug"))
+
+
+def activate_claimed_providers(db: Session) -> None:
+    """Ensure owners of claimed listings (and approved claims) can sign in."""
+    claimed_centers = (
+        db.query(RehabCenter)
+        .filter(RehabCenter.claimed.is_(True), RehabCenter.owner_user_id.isnot(None))
+        .all()
+    )
+    activated = 0
+    for center in claimed_centers:
+        user = db.query(User).filter(User.id == center.owner_user_id).first()
+        if user and user.role == UserRole.client and not user.is_active:
+            user.is_active = True
+            activated += 1
+
+    approved_claims = (
+        db.query(RehabCenterClaim)
+        .filter(
+            RehabCenterClaim.status == ClaimStatus.approved,
+            RehabCenterClaim.submitter_user_id.isnot(None),
+        )
+        .all()
+    )
+    for claim in approved_claims:
+        user = db.query(User).filter(User.id == claim.submitter_user_id).first()
+        if user and user.role == UserRole.client and not user.is_active:
+            user.is_active = True
+            activated += 1
+
+    if activated:
+        db.commit()
+        logger.info("Activated %s claimed/approved provider account(s)", activated)
 
 
 def seed_insurance_catalog(db: Session) -> None:

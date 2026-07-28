@@ -127,6 +127,42 @@
   line-height: 1.6;
 }
 
+.portal-signin-note a {
+  color: var(--brand-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.portal-signin-note a:hover {
+  color: var(--dark);
+}
+
+.portal-form-error,
+.portal-form-success {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.portal-form-error {
+  color: #b91c1c;
+}
+
+.portal-form-error a {
+  color: #991b1b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.portal-form-success {
+  color: #166534;
+}
+
+.portal-signin-actions .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .portal-options-intro {
   margin-bottom: 1.75rem;
 }
