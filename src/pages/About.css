@@ -1,6 +1,6 @@
 .about-hero {
   position: relative;
-  min-height: 42vh;
+  min-height: max(42vh, 27.75rem);
   display: flex;
   align-items: center;
   overflow: hidden;
