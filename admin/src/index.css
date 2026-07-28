@@ -320,11 +320,12 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* Typography */
 .eyebrow {
-  font-size: var(--fs-micro);
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--fg-2);
+  white-space: nowrap;
 }
 
 .hero-title {
@@ -571,15 +572,41 @@ a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .form-stack { display: flex; flex-direction: column; gap: 0; max-width: 640px; }
 label {
   display: block;
-  font-size: var(--fs-micro);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--fg-2);
   margin-bottom: 6px;
   margin-top: 12px;
 }
 label:first-child { margin-top: 0; }
+label.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--fg-2);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+label.btn {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+  color: inherit;
+}
 
 input, textarea, select {
   width: 100%;
@@ -917,11 +944,12 @@ tr:last-child td { border-bottom: none; }
   align-items: center;
   gap: 6px;
   padding: 6px 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--fg-3);
+  white-space: nowrap;
 }
 .search-group-list {
   list-style: none;

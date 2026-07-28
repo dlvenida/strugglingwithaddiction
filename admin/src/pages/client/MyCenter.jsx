@@ -385,7 +385,7 @@ export default function ClientMyCenter() {
 
       <div className="mc-summary-card card card-flat">
         <div>
-          <p className="eyebrow">PUBLIC LISTING</p>
+          <p className="eyebrow">Public listing</p>
           <h2 className="mc-center-name">{center.name}</h2>
           <div className="mc-badge-row">
             {center.verified_badge && <span className="badge">Verified badge</span>}
@@ -422,7 +422,7 @@ export default function ClientMyCenter() {
       {tab === 'overview' && (
         <div className="mc-overview">
           <Card>
-            <p className="eyebrow">GET LISTING-READY</p>
+            <p className="eyebrow">Get listing-ready</p>
             <ul className="mc-checklist">
               {onboarding.map(([label, complete]) => (
                 <li key={label} className={complete ? 'is-done' : ''}>
@@ -439,7 +439,7 @@ export default function ClientMyCenter() {
             </div>
           </Card>
           <Card>
-            <p className="eyebrow">SNAPSHOT</p>
+            <p className="eyebrow">Snapshot</p>
             <ul className="mc-rank-list">
               <li><span>Selected insurance plans</span><strong>{insurancePayload.length}</strong></li>
               <li><span>Gallery images</span><strong>{(center.gallery_urls || []).length}</strong></li>
@@ -452,7 +452,7 @@ export default function ClientMyCenter() {
 
       {tab === 'listing' && (
         <form className="card card-flat form-stack mc-form" onSubmit={save}>
-          <p className="eyebrow">BASICS</p>
+          <p className="eyebrow">Basics</p>
           <label className="field">
             <span className="field-label">Rehab center name</span>
             <input disabled={locked} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -462,7 +462,7 @@ export default function ClientMyCenter() {
             <textarea rows={5} disabled={locked} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
           </label>
 
-          <p className="eyebrow">CONTACT & LOCATION</p>
+          <p className="eyebrow">Contact & location</p>
           <div className="form-grid-2">
             {[
               ['address_line', 'Street address', 'text'],
@@ -482,7 +482,7 @@ export default function ClientMyCenter() {
             ))}
           </div>
 
-          <p className="eyebrow">CARE DETAILS</p>
+          <p className="eyebrow">Care details</p>
           <div className="form-grid-2">
             {[
               ['specialties', 'Services offered (one per line)'],
@@ -511,7 +511,7 @@ export default function ClientMyCenter() {
         <div className="card card-flat mc-insurance">
           <div className="mc-insurance-head">
             <div>
-              <p className="eyebrow">USA INSURANCE</p>
+              <p className="eyebrow">USA insurance</p>
               <p className="page-sub" style={{ margin: 0 }}>Check the plans you accept. Logos appear on your landing page and power the public search filter.</p>
             </div>
             <p className="muted">{insurancePayload.length} selected</p>
@@ -560,7 +560,7 @@ export default function ClientMyCenter() {
 
       {tab === 'media' && (
         <div className="card card-flat form-stack">
-          <p className="eyebrow">MEDIA</p>
+          <p className="eyebrow">Media</p>
           <label className="field">
             <span className="field-label">Video URL</span>
             <input disabled={locked} value={form.video_url} onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))} />
