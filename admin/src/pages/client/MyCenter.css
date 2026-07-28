@@ -197,7 +197,11 @@
   display: grid;
   gap: 4px;
   font-size: 12px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   color: var(--fg-2);
+  white-space: nowrap;
 }
 
 .mc-stat-grid {

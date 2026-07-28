@@ -107,7 +107,7 @@ export default function ClientBilling() {
       {!active && (
         <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           <Card>
-            <p className="eyebrow">MONTHLY</p>
+            <p className="eyebrow">Monthly</p>
             <p style={{ fontSize: '1.75rem', fontWeight: 700, margin: '8px 0' }}>$9.99<span style={{ fontSize: '1rem' }}>/mo</span></p>
             <p className="muted">Flexible, month-to-month billing.</p>
             <Button type="button" style={{ marginTop: 12 }} onClick={() => checkout('month')}>
@@ -115,7 +115,7 @@ export default function ClientBilling() {
             </Button>
           </Card>
           <Card>
-            <p className="eyebrow">ANNUAL — PUSH THIS TIER</p>
+            <p className="eyebrow">Annual — push this tier</p>
             <p style={{ fontSize: '1.75rem', fontWeight: 700, margin: '8px 0' }}>$99<span style={{ fontSize: '1rem' }}>/yr</span></p>
             <p className="muted">= 2 months free. Locks in a year of upsell touchpoints.</p>
             <Button type="button" style={{ marginTop: 12 }} onClick={() => checkout('year')}>
@@ -149,7 +149,7 @@ export default function ClientBilling() {
       <Card>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p className="eyebrow">INVOICES</p>
+            <p className="eyebrow">Invoices</p>
             <p className="muted" style={{ marginTop: 4 }}>Official Stripe invoices for your subscription and upgrades.</p>
           </div>
           <Button type="button" variant="ghost" disabled={busyPdf === 'history' || loadingHistory} onClick={downloadHistoryPdf}>
@@ -211,7 +211,7 @@ export default function ClientBilling() {
       </Card>
 
       <Card>
-        <p className="eyebrow">PAYMENT HISTORY</p>
+        <p className="eyebrow">Payment history</p>
         <p className="muted" style={{ marginTop: 4 }}>Charges and receipts from Stripe.</p>
 
         {loadingHistory ? (

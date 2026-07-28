@@ -73,7 +73,7 @@ export default function ClientUpsells() {
 
       {(data.verified_badge || data.featured_active || data.public_listing_url) && (
         <Card>
-          <p className="eyebrow">LIVE ON YOUR LISTING</p>
+          <p className="eyebrow">Live on your listing</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10, alignItems: 'center' }}>
             {data.verified_badge && <StatusPill status="active" />}
             {data.featured_active && <span className="upsell-pill upsell-pill--ok">Featured placement</span>}
@@ -96,7 +96,7 @@ export default function ClientUpsells() {
           return (
             <Card key={p.product_type}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
-                <p className="eyebrow">{p.fulfillment === 'human' ? 'HUMAN CLOSE' : 'SELF-SERVE'}</p>
+                <p className="eyebrow">{p.fulfillment === 'human' ? 'Human close' : 'Self-serve'}</p>
                 <StatusPill status={p.status} />
               </div>
               <h3 style={{ marginTop: 8 }}>{p.label}</h3>
