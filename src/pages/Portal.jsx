@@ -25,12 +25,17 @@ const portalCards = [
     title: 'Partners',
     body: 'Access partner resources, landing pages, and account tools in one place.',
     linkLabel: 'Learn more',
-    to: '/about',
+    to: '/rehab-centers',
   },
   {
     icon: <FaPenFancy style={ICON_STYLE} aria-hidden="true" />,
     title: 'Writers & Contributors',
-    body: 'Submit articles, track drafts, and collaborate with the editorial team.',
+    body: (
+      <>
+        Submit articles, track drafts, and collaborate with the{' '}
+        <Link to="/about">editorial team</Link>.
+      </>
+    ),
     linkLabel: 'Contact editorial',
     href: 'mailto:writers@strugglingwithaddiction.com',
   },
