@@ -420,7 +420,10 @@ export default function RehabCenters() {
         <div className="rehab-hero-overlay" />
         <div className="container rehab-hero-content">
           <span className="section-label" style={{ color: '#5FBDF6' }}>Find Help Near You</span>
-          <h1>Trusted Rehab Centers<br />Across the USA</h1>
+          <h1>
+            <span className="rehab-hero-line">Trusted Rehab Centers</span>
+            <span className="rehab-hero-line">Across the USA</span>
+          </h1>
           <p>Accredited treatment facilities with proven track records of helping people reclaim their lives from addiction.</p>
         </div>
       </section>
