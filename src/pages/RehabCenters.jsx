@@ -6,6 +6,7 @@ import { fetchApi, apiEnabled } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
 import { rehabLandingPath } from '../lib/rehabLanding'
 import RehabSearch from '../components/RehabSearch'
+import InsuranceAcceptedSection from '../components/InsuranceAcceptedSection'
 import './RehabCenters.css'
 
 export const STATIC_CENTERS = [
@@ -537,6 +538,8 @@ export default function RehabCenters() {
           })}
         </div>
       </section>
+
+      <InsuranceAcceptedSection />
 
       <section className="rehab-cta-section">
         <div className="container rehab-cta-inner">

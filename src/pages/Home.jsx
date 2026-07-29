@@ -10,7 +10,6 @@ import {
 } from 'react-icons/fa'
 import { useRecentPosts } from '../hooks/useBlogData'
 import GuidedFinder from '../components/GuidedFinder'
-import InsuranceAcceptedSection from '../components/InsuranceAcceptedSection'
 import NewsletterSection from '../components/NewsletterSection'
 import './Home.css'
 
@@ -232,7 +231,7 @@ export default function Home() {
               compare options, and contact facilities directly.
             </p>
             <div className="hope-ctas">
-              <a href="#services" className="btn">Explore Resources</a>
+              <Link to="/rehab-centers" className="btn">Explore Resources</Link>
             </div>
           </div>
           <div className="hope-image" aria-hidden="true">
@@ -241,64 +240,6 @@ export default function Home() {
               alt="A patient speaking with a doctor about treatment and medical care"
               loading="lazy"
             />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Blog Slider ─────────────────────────── */}
-      <section className="home-blog-section">
-        <div className="container">
-          <div className="home-blog-header">
-            <div>
-              <span className="section-label">From the Blog</span>
-              <h2>Latest Articles &amp; Resources</h2>
-            </div>
-            <Link to="/blog" className="btn btn-outline">View All Articles</Link>
-          </div>
-          <div className="home-blog-grid">
-            {recentPosts.map(post => (
-              <article className="home-blog-card" key={post.id}>
-                <Link to={`/blog/${post.slug}`} className="home-blog-img-wrap" tabIndex={-1} aria-hidden="true">
-                  {post.featuredImage
-                    ? <img src={post.featuredImage} alt="" loading="lazy" />
-                    : <div className="home-blog-img-placeholder" />
-                  }
-                </Link>
-                <div className="home-blog-body">
-                  <time>{formatDate(post.date)}</time>
-                  <h3><Link to={`/blog/${post.slug}`} dangerouslySetInnerHTML={{ __html: post.title }} /></h3>
-                  <p>{post.excerpt.slice(0, 120)}{post.excerpt.length > 120 ? '…' : ''}</p>
-                  <Link to={`/blog/${post.slug}`} className="btn home-blog-btn">Read More</Link>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Services ─────────────────────────────── */}
-      <section className="services-section" id="services">
-        <div className="container">
-          <div className="section-header text-center">
-            <span className="section-label">The Directory</span>
-            <h2>Find the right treatment center, faster</h2>
-            <p className="section-desc">
-              We do not provide treatment ourselves. We help you search licensed facilities,
-              compare types of care, and understand your options before you reach out.
-            </p>
-          </div>
-          <div className="services-grid">
-            {services.map(s => (
-              <div className="service-card" key={s.title}>
-                <div className="service-icon">{s.icon}</div>
-                <h3>{s.title}</h3>
-                <p>{s.body}</p>
-              </div>
-            ))}
-
-          </div>
-          <div className="text-center" style={{ marginTop: '3rem' }}>
-            <Link to="/rehab-centers" className="btn">Find a treatment center</Link>
           </div>
         </div>
       </section>
@@ -338,27 +279,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Testimonials ─────────────────────────── */}
-      <section className="testimonials-section">
+      {/* ── Services ─────────────────────────────── */}
+      <section className="services-section" id="services">
         <div className="container">
           <div className="section-header text-center">
-            <span className="section-label">Real Stories</span>
-            <h2>Recovery Happens Every Day</h2>
+            <span className="section-label">The Directory</span>
+            <h2>Find the right treatment center, faster</h2>
             <p className="section-desc">
-              These are the voices of people who found a way through. Their stories
-              are proof that a better life is possible — for you too.
+              We do not provide treatment ourselves. We help you search licensed facilities,
+              compare types of care, and understand your options before you reach out.
             </p>
           </div>
-          <div className="testimonials-grid">
-            {testimonials.map(t => (
-              <figure className="testimonial-card" key={t.name}>
-                <blockquote>"{t.quote}"</blockquote>
-                <figcaption>
-                  <strong>{t.name}</strong>
-                  <span>{t.detail}</span>
-                </figcaption>
-              </figure>
+          <div className="services-grid">
+            {services.map(s => (
+              <div className="service-card" key={s.title}>
+                <div className="service-icon">{s.icon}</div>
+                <h3>{s.title}</h3>
+                <p>{s.body}</p>
+              </div>
             ))}
+
+          </div>
+          <div className="text-center" style={{ marginTop: '3rem' }}>
+            <Link to="/rehab-centers" className="btn">Find a treatment center</Link>
           </div>
         </div>
       </section>
@@ -395,7 +338,61 @@ export default function Home() {
         </div>
       </section>
 
-      <InsuranceAcceptedSection />
+      {/* ── Testimonials ─────────────────────────── */}
+      <section className="testimonials-section">
+        <div className="container">
+          <div className="section-header text-center">
+            <span className="section-label">Real Stories</span>
+            <h2>Recovery Happens Every Day</h2>
+            <p className="section-desc">
+              These are the voices of people who found a way through. Their stories
+              are proof that a better life is possible — for you too.
+            </p>
+          </div>
+          <div className="testimonials-grid">
+            {testimonials.map(t => (
+              <figure className="testimonial-card" key={t.name}>
+                <blockquote>"{t.quote}"</blockquote>
+                <figcaption>
+                  <strong>{t.name}</strong>
+                  <span>{t.detail}</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Blog Slider ─────────────────────────── */}
+      <section className="home-blog-section">
+        <div className="container">
+          <div className="home-blog-header">
+            <div>
+              <span className="section-label">From the Blog</span>
+              <h2>Latest Articles &amp; Resources</h2>
+            </div>
+            <Link to="/blog" className="btn btn-outline">View All Articles</Link>
+          </div>
+          <div className="home-blog-grid">
+            {recentPosts.map(post => (
+              <article className="home-blog-card" key={post.id}>
+                <Link to={`/blog/${post.slug}`} className="home-blog-img-wrap" tabIndex={-1} aria-hidden="true">
+                  {post.featuredImage
+                    ? <img src={post.featuredImage} alt="" loading="lazy" />
+                    : <div className="home-blog-img-placeholder" />
+                  }
+                </Link>
+                <div className="home-blog-body">
+                  <time>{formatDate(post.date)}</time>
+                  <h3><Link to={`/blog/${post.slug}`} dangerouslySetInnerHTML={{ __html: post.title }} /></h3>
+                  <p>{post.excerpt.slice(0, 120)}{post.excerpt.length > 120 ? '…' : ''}</p>
+                  <Link to={`/blog/${post.slug}`} className="btn home-blog-btn">Read More</Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
 
       <NewsletterSection />
 
