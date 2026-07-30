@@ -244,6 +244,6 @@ class ClaimedClientAdmin(BaseModel):
 
 class ClaimReview(BaseModel):
     status: ClaimStatus
-    admin_notes: str | None = None
+    admin_notes: str = Field(..., min_length=1, description="Required when changing claim status")
     create_client_user: bool = False
     client_password: str | None = Field(default=None, min_length=8)

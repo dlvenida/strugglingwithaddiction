@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
+from pathlib import Path
 import re
 from typing import Annotated
-
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app.api.rehab_helpers import center_to_public
@@ -205,7 +206,7 @@ def claim_status(ticket: str, db: Annotated[Session, Depends(get_db)]):
         raise HTTPException(status_code=404, detail="Ticket not found")
     messages = {
         ClaimStatus.pending: "Upload your rehab certification to continue.",
-        ClaimStatus.under_review: "Your certification is under review.",
+        ClaimStatus.under_review: "Your claim is submitted and waiting for admin verification. Check your email for a confirmation — we will notify you again when verification is complete.",
         ClaimStatus.certified: "Verified — subscribe ($9.99/mo or $99/yr) to claim your listing.",
         ClaimStatus.approved: "Claimed and active. Log in to manage your listing.",
         ClaimStatus.rejected: "Your claim was not approved. Contact support for details.",
@@ -378,13 +379,51 @@ def list_claimed_clients(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
     return result
 
 
+def _certification_file_path(url: str) -> Path | None:
+    """Resolve a local certification upload path from a stored URL or key."""
+    if not url:
+        return None
+    if url.startswith("http://") or url.startswith("https://"):
+        return None
+    key = url
+    if "/uploads/" in url:
+        key = url.split("/uploads/", 1)[1]
+    elif url.startswith("/"):
+        key = url.lstrip("/")
+    key = key.split("?", 1)[0].lstrip("/")
+    if not key or ".." in key:
+        return None
+    path = Path(settings.upload_dir) / key
+    return path if path.is_file() else None
+
+
+@router.get("/api/admin/claims/{claim_id}/certification")
+def get_claim_certification(claim_id: int, _: AdminUser, db: Annotated[Session, Depends(get_db)]):
+    """Serve or redirect to the certification file uploaded for a claim."""
+    claim = db.query(RehabCenterClaim).filter(RehabCenterClaim.id == claim_id).first()
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    url = (claim.business_license_url or "").strip()
+    if not url:
+        raise HTTPException(status_code=404, detail="No certification uploaded")
+    if url.startswith("http://") or url.startswith("https://"):
+        return RedirectResponse(url)
+    path = _certification_file_path(url)
+    if not path:
+        raise HTTPException(status_code=404, detail="Certification file not found on server")
+    return FileResponse(path, filename=path.name)
+
+
 @router.patch("/api/admin/claims/{claim_id}", response_model=ClaimAdmin)
 def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotated[Session, Depends(get_db)]):
     claim = db.query(RehabCenterClaim).options(joinedload(RehabCenterClaim.center)).filter(RehabCenterClaim.id == claim_id).first()
     if not claim:
         raise HTTPException(status_code=404, detail="Claim not found")
+    notes = (body.admin_notes or "").strip()
+    if not notes:
+        raise HTTPException(status_code=400, detail="Notes are required when changing claim status")
     claim.status = body.status
-    claim.admin_notes = body.admin_notes
+    claim.admin_notes = notes
     claim.reviewed_by_id = admin.id
     claim.reviewed_at = datetime.now(timezone.utc)
     center = claim.center
@@ -475,7 +514,7 @@ def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotat
                 "name": claim.full_name,
                 "center_name": center.name,
                 "ticket": claim.ticket_number,
-                "admin_notes": (claim.admin_notes or body.admin_notes or "Please contact support if you believe this was in error."),
+                "admin_notes": claim.admin_notes or "Please contact support if you believe this was in error.",
                 "support_email": settings.email_from,
             },
             user_id=claim.submitter_user_id,

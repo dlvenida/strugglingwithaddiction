@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api } from '../../api'
+import { api, apiBlob } from '../../api'
+import { resolveMediaUrl } from '../../lib/mediaUrl'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 
@@ -9,12 +10,36 @@ function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
+/** Admin-facing status labels: pending | approved | disapproved */
+function displayStatus(status) {
+  if (status === 'rejected') return 'disapproved'
+  if (status === 'certified' || status === 'approved') return 'approved'
+  if (status === 'under_review' || status === 'pending') return 'pending'
+  return status
+}
+
+function badgeTone(status) {
+  const label = displayStatus(status)
+  if (label === 'approved') return 'ok'
+  if (label === 'disapproved') return 'err'
+  return 'warn'
+}
+
+/** Map UI action → API ClaimStatus */
+const STATUS_ACTION = {
+  pending: 'pending',
+  approved: 'certified',
+  disapproved: 'rejected',
+}
+
 export default function AdminClaims() {
   const [tab, setTab] = useState('queue')
   const [claims, setClaims] = useState([])
   const [claimedClients, setClaimedClients] = useState([])
   const [notes, setNotes] = useState({})
   const [passwords, setPasswords] = useState({})
+  const [error, setError] = useState('')
+  const [busyId, setBusyId] = useState(null)
 
   const loadClaims = () => api('/api/admin/claims').then(setClaims)
   const loadClaimed = () => api('/api/admin/claimed-clients').then(setClaimedClients)
@@ -24,21 +49,66 @@ export default function AdminClaims() {
     loadClaimed()
   }, [])
 
-  async function review(id, status) {
-    await api(`/api/admin/claims/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        status,
-        admin_notes: notes[id] || '',
-        create_client_user: status === 'certified' || status === 'approved',
-        client_password: passwords[id] || 'TempPass123!',
-      }),
-    })
-    loadClaims()
-    loadClaimed()
+  async function review(id, uiStatus) {
+    const note = (notes[id] || '').trim()
+    if (!note) {
+      setError('Notes are required for every status change.')
+      return
+    }
+    const status = STATUS_ACTION[uiStatus]
+    if (!status) return
+    setError('')
+    setBusyId(id)
+    try {
+      await api(`/api/admin/claims/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          status,
+          admin_notes: note,
+          create_client_user: status === 'certified' || status === 'approved',
+          client_password: passwords[id] || 'TempPass123!',
+        }),
+      })
+      await Promise.all([loadClaims(), loadClaimed()])
+    } catch (err) {
+      setError(err.message || 'Failed to update claim')
+    } finally {
+      setBusyId(null)
+    }
   }
 
-  const badgeTone = s => (s === 'approved' || s === 'certified' ? 'ok' : s === 'rejected' ? 'err' : 'warn')
+  async function viewCertification(c) {
+    setError('')
+    const raw = c.business_license_url
+    if (!raw) {
+      setError('No certification uploaded for this claim.')
+      return
+    }
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      window.open(raw, '_blank', 'noopener,noreferrer')
+      return
+    }
+    try {
+      const { blob, filename } = await apiBlob(`/api/admin/claims/${c.id}/certification`)
+      const objUrl = URL.createObjectURL(blob)
+      const win = window.open(objUrl, '_blank', 'noopener,noreferrer')
+      if (!win) {
+        const a = document.createElement('a')
+        a.href = objUrl
+        a.download = filename || 'certification'
+        a.rel = 'noopener'
+        a.click()
+      }
+      setTimeout(() => URL.revokeObjectURL(objUrl), 60_000)
+    } catch (err) {
+      const fallback = resolveMediaUrl(raw)
+      if (fallback) {
+        window.open(fallback, '_blank', 'noopener,noreferrer')
+      } else {
+        setError(err.message || 'Could not open certification upload')
+      }
+    }
+  }
 
   const queueClaims = claims.filter(c => c.status === 'pending' || c.status === 'under_review')
   const historyClaims = claims.filter(c => ['approved', 'rejected', 'certified', 'abandoned'].includes(c.status))
@@ -50,8 +120,15 @@ export default function AdminClaims() {
         <h1 className="page-title">Claims.</h1>
         <p className="page-sub">
           Verify rehab certifications here. Ownership is granted after Stripe payment — not on verify.
+          Status changes require notes.
         </p>
       </header>
+
+      {error && (
+        <div className="card" style={{ borderColor: 'var(--err, #b91c1c)', color: 'var(--err, #b91c1c)' }}>
+          <p style={{ margin: 0 }}>{error}</p>
+        </div>
+      )}
 
       <div className="tabs-row">
         <button type="button" className={`tab-btn${tab === 'queue' ? ' active' : ''}`} onClick={() => setTab('queue')}>
@@ -119,7 +196,7 @@ export default function AdminClaims() {
             <div className="claim-item">
               <div>
                 <strong style={{ fontSize: 'var(--text-sm)' }}>{c.ticket_number}</strong>
-                <span style={{ marginLeft: 8 }}><Badge tone={badgeTone(c.status)}>{c.status}</Badge></span>
+                <span style={{ marginLeft: 8 }}><Badge tone={badgeTone(c.status)}>{displayStatus(c.status)}</Badge></span>
                 {c.email_domain_matched && <span style={{ marginLeft: 8 }}><Badge tone="ok">email domain match</Badge></span>}
                 <p className="claim-meta">{c.center_name}</p>
                 <p className="claim-meta">{c.full_name} · {c.work_email}</p>
@@ -127,32 +204,62 @@ export default function AdminClaims() {
                 <p className="muted" style={{ marginTop: 4 }}>{c.affiliation_text}</p>
                 {c.business_license_url && (
                   <p style={{ marginTop: 8 }}>
-                    <a href={c.business_license_url} target="_blank" rel="noreferrer">View certification upload</a>
+                    <button
+                      type="button"
+                      className="btn btn-link btn-sm"
+                      style={{ padding: 0, height: 'auto' }}
+                      onClick={() => viewCertification(c)}
+                    >
+                      View certification upload
+                    </button>
                   </p>
                 )}
                 {c.admin_notes && <p className="muted" style={{ marginTop: 8 }}>Notes: {c.admin_notes}</p>}
                 {c.reviewed_at && <p className="muted" style={{ marginTop: 4 }}>Reviewed {formatDate(c.reviewed_at)}</p>}
+                {c.status === 'certified' && (
+                  <p className="muted" style={{ marginTop: 4 }}>Waiting for Stripe payment to grant the claim.</p>
+                )}
               </div>
             </div>
             {(c.status === 'pending' || c.status === 'under_review') && (
               <>
-                <label>Notes</label>
-                <textarea rows={2} value={notes[c.id] || ''} onChange={e => setNotes(n => ({ ...n, [c.id]: e.target.value }))} />
+                <label>Notes <span className="muted">(required)</span></label>
+                <textarea
+                  rows={2}
+                  required
+                  value={notes[c.id] || ''}
+                  onChange={e => setNotes(n => ({ ...n, [c.id]: e.target.value }))}
+                  placeholder="Required for pending, approved, or disapproved"
+                />
                 <label>Temp password (if account missing)</label>
                 <input value={passwords[c.id] || ''} onChange={e => setPasswords(p => ({ ...p, [c.id]: e.target.value }))} placeholder="TempPass123!" />
                 <div className="form-actions form-actions-tight">
-                  <button type="button" className="btn btn-primary btn-sm" onClick={() => review(c.id, 'certified')}>
-                    Verify certification
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={busyId === c.id}
+                    onClick={() => review(c.id, 'pending')}
+                  >
+                    Pending
                   </button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => review(c.id, 'rejected')}>Reject</button>
-                  {c.status === 'pending' && (
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => review(c.id, 'under_review')}>Mark under review</button>
-                  )}
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={busyId === c.id}
+                    onClick={() => review(c.id, 'approved')}
+                  >
+                    Approved
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={busyId === c.id}
+                    onClick={() => review(c.id, 'disapproved')}
+                  >
+                    Disapproved
+                  </button>
                 </div>
               </>
-            )}
-            {c.status === 'certified' && (
-              <p className="muted">Waiting for Stripe payment to grant the claim.</p>
             )}
           </div>
         ))

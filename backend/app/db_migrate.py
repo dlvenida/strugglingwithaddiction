@@ -137,7 +137,7 @@ def run_migrations(engine: Engine) -> None:
             ]:
                 if col not in cols:
                     conn.execute(text(f"ALTER TABLE rehab_center_claims ADD COLUMN {col} {ddl}"))
-            for value in ("certified", "abandoned"):
+            for value in ("under_review", "certified", "abandoned"):
                 try:
                     conn.execute(text(f"ALTER TYPE claimstatus ADD VALUE IF NOT EXISTS '{value}'"))
                 except Exception:

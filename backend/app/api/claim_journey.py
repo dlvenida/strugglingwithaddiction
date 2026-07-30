@@ -156,6 +156,8 @@ def start_claim(body: ClaimStartRequest, db: Annotated[Session, Depends(get_db)]
             "name": body.full_name,
             "email": email,
             "login_url": f"{settings.admin_site_url}/login",
+            "claim_for": f" to manage {center.name}",
+            "center_name": center.name,
         },
         user_id=user.id,
         rehab_center_id=center.id,
@@ -231,12 +233,27 @@ async def upload_claim_cert(
         user_id=claim.submitter_user_id,
         rehab_center_id=claim.rehab_center_id,
     )
+    center_name = claim.center.name if claim.center else "your center"
+    claim_url = f"{settings.public_site_url}/claim-status/{claim.ticket_number}"
+    send_email(
+        db,
+        to_email=claim.work_email,
+        template_key="claim_submitted",
+        context={
+            "name": claim.full_name,
+            "center_name": center_name,
+            "ticket": claim.ticket_number,
+            "claim_url": claim_url,
+        },
+        user_id=claim.submitter_user_id,
+        rehab_center_id=claim.rehab_center_id,
+    )
 
     return ClaimStartOut(
         ticket_number=claim.ticket_number,
         status=claim.status,
         center_name=claim.center.name,
-        message="Certification uploaded. An admin will verify it before you can subscribe.",
+        message="Proof received. Your claim is pending admin verification — we emailed you a confirmation.",
         checkout_ready=claim.status == ClaimStatus.certified,
         user_id=claim.submitter_user_id,
     )
@@ -385,7 +402,7 @@ def claim_status_detail(ticket: str, db: Annotated[Session, Depends(get_db)]):
         raise HTTPException(status_code=404, detail="Ticket not found")
     messages = {
         ClaimStatus.pending: "Upload your rehab certification to continue.",
-        ClaimStatus.under_review: "Certification is under review.",
+        ClaimStatus.under_review: "Your claim is submitted and waiting for admin verification. Check your email for a confirmation — we will notify you again when verification is complete.",
         ClaimStatus.certified: "Verified — choose a plan to claim your listing.",
         ClaimStatus.approved: "Claimed and active. Log in to manage your listing.",
         ClaimStatus.rejected: "Your claim was not approved.",
