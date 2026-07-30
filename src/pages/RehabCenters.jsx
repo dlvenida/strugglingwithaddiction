@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaStar, FaSearch } from 'react-icons/fa'
 import { MdVerified } from 'react-icons/md'
@@ -148,6 +148,138 @@ const EMPTY_SUBMIT_FORM = {
   description: '',
 }
 
+function MultiSelectDropdown({
+  label,
+  hint,
+  options,
+  value,
+  onChange,
+  placeholder = 'Select…',
+  searchPlaceholder = 'Search…',
+}) {
+  const [open, setOpen] = useState(false)
+  const [query, setQuery] = useState('')
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+    function onDocClick(e) {
+      if (rootRef.current && !rootRef.current.contains(e.target)) {
+        setOpen(false)
+        setQuery('')
+      }
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        setQuery('')
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return options
+    return options.filter(opt => opt.label.toLowerCase().includes(q))
+  }, [options, query])
+
+  function toggle(optValue) {
+    onChange(
+      value.includes(optValue)
+        ? value.filter(v => v !== optValue)
+        : [...value, optValue],
+    )
+  }
+
+  function remove(optValue) {
+    onChange(value.filter(v => v !== optValue))
+  }
+
+  const summary = value.length === 0
+    ? placeholder
+    : value.length === 1
+      ? value[0]
+      : `${value.length} selected`
+
+  return (
+    <div className="modal-multiselect" ref={rootRef}>
+      <div className="modal-multiselect-label">
+        {label}
+        {hint && <span>{hint}</span>}
+      </div>
+      <button
+        type="button"
+        className={`modal-multiselect-trigger${open ? ' is-open' : ''}${value.length ? ' has-value' : ''}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+      >
+        <span>{summary}</span>
+        <span className="modal-multiselect-caret" aria-hidden="true" />
+      </button>
+
+      {value.length > 0 && (
+        <div className="modal-multiselect-chips">
+          {value.map(item => (
+            <button
+              key={item}
+              type="button"
+              className="modal-multiselect-chip"
+              onClick={() => remove(item)}
+              aria-label={`Remove ${item}`}
+            >
+              {item}
+              <span aria-hidden="true">×</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {open && (
+        <div className="modal-multiselect-panel" role="listbox" aria-multiselectable="true">
+          <input
+            type="search"
+            className="modal-multiselect-search"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={searchPlaceholder}
+            autoFocus
+            aria-label={searchPlaceholder}
+          />
+          <div className="modal-multiselect-options">
+            {filtered.length === 0 ? (
+              <p className="modal-multiselect-empty">No matches</p>
+            ) : (
+              filtered.map(opt => {
+                const selected = value.includes(opt.value)
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    className={`modal-multiselect-option${selected ? ' is-on' : ''}`}
+                    onClick={() => toggle(opt.value)}
+                  >
+                    <span className="modal-multiselect-check" aria-hidden="true">{selected ? '✓' : ''}</span>
+                    <span>{opt.label}</span>
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SubmitCenterModal({ onClose }) {
   const [form, setForm] = useState(EMPTY_SUBMIT_FORM)
   const [services, setServices] = useState([])
@@ -156,6 +288,15 @@ function SubmitCenterModal({ onClose }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
+
+  const serviceOptions = useMemo(
+    () => REHAB_SERVICE_TYPES.map(s => ({ value: s.label, label: s.label })),
+    [],
+  )
+  const insuranceOptions = useMemo(
+    () => catalog.map(item => ({ value: item.name, label: item.name })),
+    [catalog],
+  )
 
   useEffect(() => {
     if (!apiEnabled()) {
@@ -174,14 +315,6 @@ function SubmitCenterModal({ onClose }) {
         setCatalog(REHAB_INSURANCE_TYPES.map((item, i) => ({ id: item.id || i, name: item.label })))
       })
   }, [])
-
-  function toggleService(label) {
-    setServices(prev => (prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]))
-  }
-
-  function toggleInsurance(name) {
-    setInsurances(prev => (prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]))
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -252,37 +385,25 @@ function SubmitCenterModal({ onClose }) {
                 <label>ZIP<input type="text" value={form.zip} onChange={e => setForm(f => ({ ...f, zip: e.target.value }))} /></label>
               </div>
 
-              <fieldset className="modal-check-group">
-                <legend>Types of services <span>(select all that apply)</span></legend>
-                <div className="modal-check-grid">
-                  {REHAB_SERVICE_TYPES.map(service => (
-                    <label key={service.id} className={`modal-check${services.includes(service.label) ? ' is-on' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={services.includes(service.label)}
-                        onChange={() => toggleService(service.label)}
-                      />
-                      <span>{service.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <MultiSelectDropdown
+                label="Types of services"
+                hint="select all that apply"
+                options={serviceOptions}
+                value={services}
+                onChange={setServices}
+                placeholder="Select services…"
+                searchPlaceholder="Search services…"
+              />
 
-              <fieldset className="modal-check-group">
-                <legend>Insurance accepted <span>(select multiple)</span></legend>
-                <div className="modal-check-grid">
-                  {catalog.map(item => (
-                    <label key={item.id} className={`modal-check${insurances.includes(item.name) ? ' is-on' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={insurances.includes(item.name)}
-                        onChange={() => toggleInsurance(item.name)}
-                      />
-                      <span>{item.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <MultiSelectDropdown
+                label="Insurance accepted"
+                hint="select multiple"
+                options={insuranceOptions}
+                value={insurances}
+                onChange={setInsurances}
+                placeholder="Select insurance…"
+                searchPlaceholder="Search insurance…"
+              />
 
               <label>
                 Description
