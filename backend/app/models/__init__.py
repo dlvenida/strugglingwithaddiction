@@ -23,6 +23,7 @@ from app.models.upsell import UpsellOrder, UpsellProductType, UpsellFulfillment,
 from app.models.email_log import EmailLog
 from app.models.email_template import EmailTemplateOverride
 from app.models.platform_settings import PlatformEmailSettings
+from app.models.center_submission import CenterSubmission, CenterSubmissionStatus
 from app.models.insurance import InsuranceCatalog
 from app.models.analytics import CenterPageView, SitePageView
 
@@ -61,4 +62,6 @@ __all__ = [
     "InsuranceCatalog",
     "CenterPageView",
     "SitePageView",
+    "CenterSubmission",
+    "CenterSubmissionStatus",
 ]
