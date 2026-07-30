@@ -82,7 +82,7 @@ export default function AdminImport() {
       </header>
 
       <Card>
-        <p className="eyebrow">1. DOWNLOAD TEMPLATE</p>
+        <p className="eyebrow">1. Download template</p>
         <p className="muted" style={{ marginTop: 8, marginBottom: 16 }}>
           Use this exact header row. Keep one facility per line. List fields accept <code>|</code> or <code>;</code> separators.
         </p>
@@ -95,7 +95,7 @@ export default function AdminImport() {
       </Card>
 
       <Card>
-        <p className="eyebrow">2. UPLOAD CSV</p>
+        <p className="eyebrow">2. Upload CSV</p>
         <form onSubmit={onSubmit} className="form-stack" style={{ marginTop: 12 }}>
           <label className="field">
             <span className="field-label">CSV file</span>
@@ -115,7 +115,7 @@ export default function AdminImport() {
 
       {summary && (
         <Card>
-          <p className="eyebrow">IMPORT RESULT</p>
+          <p className="eyebrow">Import result</p>
           <p style={{ marginTop: 8 }}>
             <strong>{summary.created}</strong> created · <strong>{summary.updated}</strong> updated ·{' '}
             <strong>{summary.skipped}</strong> skipped · <strong>{summary.total_rows}</strong> rows read
@@ -129,7 +129,7 @@ export default function AdminImport() {
       )}
 
       <Card>
-        <p className="eyebrow">3. OUTREACH INVITES</p>
+        <p className="eyebrow">3. Outreach invites</p>
         <p className="muted" style={{ marginTop: 8, marginBottom: 12 }}>
           Sends “Your center is listed — claim it” to unclaimed centers that have <code>outreach_email</code> in the CSV.
           Requires Resend or SMTP configured; otherwise emails are logged server-side.

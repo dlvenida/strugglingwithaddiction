@@ -81,7 +81,7 @@ export default function ProfilePage() {
       {user?.role === 'client' && (
         <div className="card card-flat" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p className="eyebrow">PUBLIC LISTING</p>
+            <p className="eyebrow">Public listing</p>
             <p style={{ margin: '4px 0 0' }}>Edit your rehab profile, insurance, media, and analytics on the Profile page.</p>
           </div>
           <Link className="btn btn-primary" to="/client/profile">Open listing profile</Link>
@@ -133,7 +133,7 @@ export default function ProfilePage() {
         <p className="eyebrow">Address</p>
         <div className="form-grid-2">
           <label className="field">
-            <span className="field-label">Street</span>
+          <span className="field-label">Street</span>
             <input value={form.address_line} onChange={e => setForm(f => ({ ...f, address_line: e.target.value }))} />
           </label>
           <label className="field">
@@ -152,9 +152,13 @@ export default function ProfilePage() {
 
         <p className="eyebrow">Social</p>
         <div className="form-grid-2">
-          {['website', 'twitter', 'linkedin'].map(key => (
+          {[
+            ['website', 'Website'],
+            ['twitter', 'Twitter'],
+            ['linkedin', 'LinkedIn'],
+          ].map(([key, label]) => (
             <label key={key} className="field">
-              <span className="field-label">{key}</span>
+              <span className="field-label">{label}</span>
               <input
                 value={form.social_links?.[key] || ''}
                 onChange={e => setForm(f => ({

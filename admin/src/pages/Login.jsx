@@ -35,6 +35,31 @@ export default function Login() {
   }, [])
 
   useEffect(() => {
+    const raw = window.location.hash.startsWith('#swa-auth=')
+      ? window.location.hash.slice('#swa-auth='.length)
+      : ''
+    if (!raw) return
+    try {
+      const data = JSON.parse(atob(decodeURIComponent(raw)))
+      if (!data?.access_token || !data?.refresh_token || !data?.role) return
+      if (data.role === 'admin') {
+        setError('Platform administrators must sign in at /swa-login/')
+        window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        return
+      }
+      localStorage.setItem('access_token', data.access_token)
+      localStorage.setItem('refresh_token', data.refresh_token)
+      localStorage.setItem('role', data.role)
+      const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+      const next = data.role === 'editor' ? 'editor' : 'client'
+      window.location.replace(`${base}/${next}`)
+    } catch {
+      setError('Could not complete sign-in handoff. Please sign in again.')
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [])
+
+  useEffect(() => {
     const t = setInterval(() => setSlide(s => (s + 1) % HERO_IMAGES.length), 7000)
     return () => clearInterval(t)
   }, [])

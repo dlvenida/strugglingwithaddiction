@@ -1,7 +1,8 @@
 /* ── Hero ─────────────────────────────────── */
 .blog-hero {
   position: relative;
-  min-height: 42vh;
+  height: var(--page-hero-height);
+  min-height: var(--page-hero-height);
   display: flex;
   align-items: center;
   background-image: url('/images/Mindfulness-in-Recovery-Cultivating-Inner-Peace-After-Addiction_2426878099.webp');
@@ -277,7 +278,7 @@
 
 .blog-card-date {
   font-size: 0.78rem;
-  color: #5FBDF6;
+  color: #000;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -301,14 +302,16 @@
 
 .blog-card-author {
   font-size: 0.8rem;
-  color: #8c1126;
-  font-weight: 700;
+  color: #000;
+  font-weight: 400;
+  font-style: italic;
   text-decoration: none;
+  margin-top: calc(2px - 0.6rem);
   transition: color 0.3s;
 }
 
 .blog-card-author:hover {
-  color: #1a1a2e;
+  color: #000;
   text-decoration: underline;
 }
 

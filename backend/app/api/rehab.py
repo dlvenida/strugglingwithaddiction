@@ -462,7 +462,9 @@ def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotat
         center.contact_visible = False
     elif body.status == ClaimStatus.approved:
         # Legacy path — prefer payment webhook; still allow admin force-approve
-        ensure_client_user()
+        user = ensure_client_user()
+        if user:
+            user.is_active = True
         center.claimed = True
         center.contact_visible = True
         if claim.cert_verified_at is None:
@@ -497,7 +499,7 @@ def review_claim(claim_id: int, body: ClaimReview, admin: AdminUser, db: Annotat
             context={
                 "name": claim.full_name,
                 "center_name": center.name,
-                "login_url": f"{settings.admin_site_url}/login",
+                "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
                 "billing_url": f"{settings.admin_site_url}/client/billing",
                 "receipt_url": f"{settings.admin_site_url}/client/billing",
                 "support_email": settings.email_from,

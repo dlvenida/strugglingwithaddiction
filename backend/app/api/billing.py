@@ -421,7 +421,7 @@ async def stripe_webhook(request: Request, db: Annotated[Session, Depends(get_db
                                 "product_label": product_label,
                                 "amount": f"${(order.amount_cents or 0) / 100:.2f}",
                                 "order_id": str(order.id),
-                                "login_url": f"{settings.admin_site_url}/login",
+                                "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
                                 "billing_url": f"{settings.admin_site_url}/client/billing",
                             },
                             user_id=user.id,

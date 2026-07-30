@@ -37,7 +37,8 @@ const NAV_BY_ROLE = {
     { to: '/client/leads', label: 'Leads', Icon: IconInbox },
     { to: '/client/upsells', label: 'Upgrades', Icon: IconFile },
     { to: '/client/landing', label: 'Partner page', Icon: IconFile },
-    { to: '/client/posts', label: 'Posts', Icon: IconFile },
+    // Posts hidden for now — reinstate when client blogging ships
+    // { to: '/client/posts', label: 'Posts', Icon: IconFile },
     { to: '/client/billing', label: 'Billing', Icon: IconCard },
     { to: '/client/account', label: 'Account', Icon: IconSettings },
   ],

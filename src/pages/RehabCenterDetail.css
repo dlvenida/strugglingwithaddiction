@@ -333,8 +333,6 @@
 }
 
 .rpd-sidebar {
-  position: sticky;
-  top: var(--rpd-sticky-top);
   align-self: start;
   z-index: 4;
   min-width: 0;
@@ -343,9 +341,6 @@
 .rpd-sticky {
   display: grid;
   gap: 0.85rem;
-  max-height: calc(100vh - var(--rpd-sticky-top) - 1rem);
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 
 .rpd-form,
@@ -858,13 +853,6 @@
 
   .rpd-sidebar {
     order: 2;
-    position: static;
-    max-height: none;
-  }
-
-  .rpd-sticky {
-    max-height: none;
-    overflow-y: visible;
   }
 
   .rpd-mobile-bar {

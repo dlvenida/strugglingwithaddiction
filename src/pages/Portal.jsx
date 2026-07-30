@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   FaBuilding,
@@ -6,6 +6,8 @@ import {
   FaHandshake,
   FaLifeRing,
 } from 'react-icons/fa'
+import { fetchApi } from '../lib/api'
+import { getAdminSiteUrl, providerDashboardPath, superadminLoginUrl } from '../lib/adminSite'
 import './Portal.css'
 
 const ICON_STYLE = { color: '#8c1126', fontSize: '1.6rem' }
@@ -23,12 +25,17 @@ const portalCards = [
     title: 'Partners',
     body: 'Access partner resources, landing pages, and account tools in one place.',
     linkLabel: 'Learn more',
-    to: '/about',
+    to: '/rehab-centers',
   },
   {
     icon: <FaPenFancy style={ICON_STYLE} aria-hidden="true" />,
     title: 'Writers & Contributors',
-    body: 'Submit articles, track drafts, and collaborate with the editorial team.',
+    body: (
+      <>
+        Submit articles, track drafts, and collaborate with the{' '}
+        <Link to="/about">editorial team</Link>.
+      </>
+    ),
     linkLabel: 'Contact editorial',
     href: 'mailto:writers@strugglingwithaddiction.com',
   },
@@ -41,23 +48,106 @@ const portalCards = [
   },
 ]
 
+function destinationForRole(role) {
+  if (role === 'editor') return `${getAdminSiteUrl()}/editor`
+  return `${getAdminSiteUrl()}${providerDashboardPath()}`
+}
+
+function handoffToProviderDashboard(data) {
+  const adminBase = getAdminSiteUrl()
+  let sameOrigin = false
+  try {
+    sameOrigin = new URL(adminBase, window.location.origin).origin === window.location.origin
+  } catch {
+    sameOrigin = false
+  }
+
+  if (sameOrigin) {
+    localStorage.setItem('access_token', data.access_token)
+    localStorage.setItem('refresh_token', data.refresh_token)
+    localStorage.setItem('role', data.role)
+    window.location.assign(destinationForRole(data.role))
+    return
+  }
+
+  // Local dual-server: public site and admin SPA are different origins.
+  const payload = encodeURIComponent(btoa(JSON.stringify({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    role: data.role,
+  })))
+  window.location.assign(`${adminBase}/login#swa-auth=${payload}`)
+}
+
 export default function Portal() {
+  const [mode, setMode] = useState('login') // 'login' | 'forgot'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
   useEffect(() => {
     const site = 'Struggling With Addiction'
-    document.title = `Portal | ${site}`
+    document.title = `Rehab Provider Login | ${site}`
     return () => { document.title = site }
   }, [])
+
+  function switchMode(next) {
+    setMode(next)
+    setError('')
+    setMessage('')
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault()
+    setError('')
+    setMessage('')
+    setSubmitting(true)
+    try {
+      const data = await fetchApi('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim(), password }),
+      })
+      if (data.role === 'admin') {
+        setError('Platform administrators must sign in at the superadmin login.')
+        return
+      }
+      handoffToProviderDashboard(data)
+    } catch (err) {
+      setError(err.message || 'Unable to sign in.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleForgotPassword(e) {
+    e.preventDefault()
+    setError('')
+    setMessage('')
+    setSubmitting(true)
+    try {
+      const result = await fetchApi('/api/auth/request-password-reset', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      setMessage(result.message || 'If an account exists for that address, a reset link has been sent.')
+    } catch (err) {
+      setError(err.message || 'Unable to send reset email.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
 
   return (
     <main className="portal-page">
       <section className="portal-hero">
         <div className="portal-hero-overlay" aria-hidden="true" />
         <div className="container portal-hero-content">
-          <span className="section-label">Partner & Client Access</span>
-          <h1>Portal</h1>
+          <span className="section-label">Rehab Providers</span>
+          <h1>Provider Login</h1>
           <p>
-            A central place for treatment centers, partners, and contributors to manage
-            listings, content, and account resources.
+            Sign in to manage your claimed listing, leads, billing, and partner tools.
           </p>
         </div>
       </section>
@@ -65,49 +155,119 @@ export default function Portal() {
       <section className="portal-body">
         <div className="container portal-layout">
           <aside className="portal-signin">
-            <h2>Sign In</h2>
-            <p className="portal-signin-intro">
-              Use your account email and password to access the portal dashboard.
-            </p>
-            <form onSubmit={e => e.preventDefault()} noValidate>
-              <div className="portal-field">
-                <label htmlFor="portal-email">Email</label>
-                <input
-                  id="portal-email"
-                  type="email"
-                  name="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                />
-              </div>
-              <div className="portal-field">
-                <label htmlFor="portal-password">Password</label>
-                <input
-                  id="portal-password"
-                  type="password"
-                  name="password"
-                  autoComplete="current-password"
-                  placeholder="Enter your password"
-                />
-              </div>
-              <div className="portal-signin-actions">
-                <button type="button" className="btn">Sign In</button>
-                <button type="button" className="btn btn-outline">Forgot Password</button>
-              </div>
-            </form>
+            {mode === 'login' ? (
+              <>
+                <h2>Sign In</h2>
+                <p className="portal-signin-intro">
+                  Use the email and password from when you claimed your listing.
+                </p>
+                <form onSubmit={handleLogin} noValidate>
+                  <div className="portal-field">
+                    <label htmlFor="portal-email">Email</label>
+                    <input
+                      id="portal-email"
+                      type="email"
+                      name="email"
+                      autoComplete="email"
+                      placeholder="you@yourfacility.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="portal-field">
+                    <label htmlFor="portal-password">Password</label>
+                    <input
+                      id="portal-password"
+                      type="password"
+                      name="password"
+                      autoComplete="current-password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                  {error && (
+                    <p className="portal-form-error" role="alert">
+                      {error}
+                      {error.includes('superadmin') && (
+                        <>
+                          {' '}
+                          <a href={superadminLoginUrl()}>Open superadmin login</a>
+                        </>
+                      )}
+                    </p>
+                  )}
+                  <div className="portal-signin-actions">
+                    <button type="submit" className="btn" disabled={submitting}>
+                      {submitting ? 'Signing in…' : 'Sign In'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => switchMode('forgot')}
+                      disabled={submitting}
+                    >
+                      Forgot Password
+                    </button>
+                  </div>
+                </form>
+              </>
+            ) : (
+              <>
+                <h2>Forgot Password</h2>
+                <p className="portal-signin-intro">
+                  Enter your account email and we will send a password reset link if an account exists.
+                </p>
+                <form onSubmit={handleForgotPassword} noValidate>
+                  <div className="portal-field">
+                    <label htmlFor="portal-reset-email">Email</label>
+                    <input
+                      id="portal-reset-email"
+                      type="email"
+                      name="email"
+                      autoComplete="email"
+                      placeholder="you@yourfacility.com"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  {error && <p className="portal-form-error" role="alert">{error}</p>}
+                  {message && <p className="portal-form-success" role="status">{message}</p>}
+                  <div className="portal-signin-actions">
+                    <button type="submit" className="btn" disabled={submitting}>
+                      {submitting ? 'Sending…' : 'Email Reset Link'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => switchMode('login')}
+                      disabled={submitting}
+                    >
+                      Back to Sign In
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
             <p className="portal-signin-note">
-              This is a mockup preview. Authentication and account management will be
-              available in a future release.
+              Already claimed and verified? Sign in here to open your provider dashboard.
+              Still finishing your claim?{' '}
+              <Link to="/rehab-centers">Find your listing</Link> or email{' '}
+              <a href="mailto:help@strugglingwithaddiction.com">help@strugglingwithaddiction.com</a>.
             </p>
           </aside>
 
           <div className="portal-options">
             <div className="portal-options-intro">
-              <span className="section-label">Portal Areas</span>
+              <span className="section-label">Provider Tools</span>
               <h2>What You Can Access</h2>
               <p>
-                The portal will bring together the tools treatment centers, partners,
-                and contributors need to stay connected with the directory.
+                After you claim and activate your listing, the provider portal brings together
+                the tools treatment centers need to stay connected with the directory.
               </p>
             </div>
 

@@ -1,6 +1,7 @@
 .about-hero {
   position: relative;
-  min-height: 42vh;
+  height: var(--page-hero-height);
+  min-height: var(--page-hero-height);
   display: flex;
   align-items: center;
   overflow: hidden;

@@ -17,6 +17,7 @@
   --accent-teal: #5dcaa5;
   --accent-gold: #dda24a;
   --header-height: 72px;
+  --page-hero-height: max(42vh, 28rem);
   --transition: 0.3s ease;
   --font-body: 'Open Sans', Helvetica, Arial, sans-serif;
   --font-heading: 'Open Sans', Helvetica, Arial, sans-serif;

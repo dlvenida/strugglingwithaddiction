@@ -472,7 +472,7 @@ def default_template_context(to_email: str = "preview@example.com", db: Session 
         "ticket": "SWA-1001",
         "listing_url": f"{settings.public_site_url.rstrip('/')}/rehabs",
         "claim_url": f"{settings.public_site_url.rstrip('/')}/claim-status/SWA-1001",
-        "login_url": f"{settings.admin_site_url.rstrip('/')}/login",
+        "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
         "billing_url": f"{settings.admin_site_url.rstrip('/')}/client/billing",
         "receipt_url": f"{settings.admin_site_url.rstrip('/')}/client/billing",
         "support_email": delivery["email_from"],

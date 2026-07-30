@@ -647,7 +647,7 @@ def admin_update_upsell_order(
                         "center_name": center.name if center else "your listing",
                         "product_label": order.product_type.value.replace("_", " ").title(),
                         "listing_url": _public_listing_url(center) if center else settings.public_site_url,
-                        "login_url": f"{settings.admin_site_url}/login",
+                        "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
                     },
                     user_id=user.id,
                     rehab_center_id=order.rehab_center_id,

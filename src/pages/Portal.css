@@ -1,6 +1,7 @@
 .portal-hero {
   position: relative;
-  min-height: 42vh;
+  height: var(--page-hero-height);
+  min-height: var(--page-hero-height);
   display: flex;
   align-items: center;
   background-image: url('/images/blog/US-Hospitals-Should-Have-Addiction-Specialist-ER-Overdose-Prevention_1043242537.webp');
@@ -14,7 +15,7 @@
 .portal-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(26, 26, 46, 0.72) 0%, rgba(26, 26, 46, 0.55) 100%);
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.88) 0%, rgba(26, 26, 46, 0.74) 100%);
 }
 
 .portal-hero-content {
@@ -127,6 +128,42 @@
   line-height: 1.6;
 }
 
+.portal-signin-note a {
+  color: var(--brand-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.portal-signin-note a:hover {
+  color: var(--dark);
+}
+
+.portal-form-error,
+.portal-form-success {
+  margin: 0 0 0.75rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.portal-form-error {
+  color: #b91c1c;
+}
+
+.portal-form-error a {
+  color: #991b1b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.portal-form-success {
+  color: #166534;
+}
+
+.portal-signin-actions .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .portal-options-intro {
   margin-bottom: 1.75rem;
 }
@@ -188,6 +225,16 @@
   font-size: 0.92rem;
   line-height: 1.65;
   margin: 0 0 1rem;
+}
+
+.portal-card p a {
+  color: var(--brand-red);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.portal-card p a:hover {
+  color: var(--brand-blue);
 }
 
 .portal-card-link {
