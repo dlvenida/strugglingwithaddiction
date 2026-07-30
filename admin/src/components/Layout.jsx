@@ -8,7 +8,7 @@ export function AdminLayout({ children }) {
   const [pendingClaims, setPendingClaims] = useState(0)
   useEffect(() => {
     api('/api/admin/claims')
-      .then(list => setPendingClaims(list.filter(c => c.status === 'pending').length))
+      .then(list => setPendingClaims(list.filter(c => c.status === 'pending' || c.status === 'under_review').length))
       .catch(() => {})
   }, [])
   return <Shell pendingClaims={pendingClaims}>{children}</Shell>

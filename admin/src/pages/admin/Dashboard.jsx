@@ -25,14 +25,20 @@ export default function AdminDashboard() {
         users: users.length,
         posts: posts.length,
         centers: rehab.length,
-        claims: claims.filter(c => c.status === 'pending').length,
+        claims: claims.filter(c => c.status === 'pending' || c.status === 'under_review').length,
       })
       setCenters(rehab.slice(0, 3))
+      const statusLabel = s => {
+        if (s === 'rejected') return 'disapproved'
+        if (s === 'certified' || s === 'approved') return 'approved'
+        if (s === 'under_review' || s === 'pending') return 'pending'
+        return s
+      }
       setActivity(
         claims.slice(0, 4).map(c => ({
           time: new Date(c.created_at).toLocaleDateString(),
-          msg: `${c.ticket_number} — ${c.center_name} (${c.status})`,
-          tone: c.status === 'pending' ? 'warn' : c.status === 'approved' ? 'ok' : 'info',
+          msg: `${c.ticket_number} — ${c.center_name} (${statusLabel(c.status)})`,
+          tone: ['pending', 'under_review'].includes(c.status) ? 'warn' : ['approved', 'certified'].includes(c.status) ? 'ok' : 'info',
         })),
       )
     })

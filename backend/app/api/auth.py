@@ -177,6 +177,7 @@ def register_client(body: RegisterClientRequest, db: Annotated[Session, Depends(
             "name": body.display_name,
             "email": user.email,
             "login_url": f"{settings.public_site_url.rstrip('/')}/portal",
+            "claim_for": "",
         },
         user_id=user.id,
     )

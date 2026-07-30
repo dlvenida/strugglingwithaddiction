@@ -71,6 +71,11 @@ TEMPLATE_META: dict[str, dict[str, str]] = {
         "description": "Ask a claimant to upload rehab certification.",
         "category": "claim",
     },
+    "claim_submitted": {
+        "label": "Claim submitted",
+        "description": "Confirm to the claimant that their claim and certification were received.",
+        "category": "claim",
+    },
     "claim_under_review_admin": {
         "label": "Admin — certification under review",
         "description": "Internal alert when certification is uploaded for review.",
@@ -176,7 +181,7 @@ TEMPLATE_META: dict[str, dict[str, str]] = {
 DEFAULT_TEMPLATES: dict[str, tuple[str, str]] = {
     "account_created": (
         "Your Struggling With Addiction account is ready",
-        "Hi {name},\n\nYour account ({email}) is set up.\n\n"
+        "Hi {name},\n\nYour account ({email}) is set up{claim_for}.\n\n"
         "Sign in here: {login_url}\n\n"
         "If you started a listing claim, continue verification from your claim status page.\n",
     ),
@@ -210,10 +215,18 @@ DEFAULT_TEMPLATES: dict[str, tuple[str, str]] = {
         "Review claims: {admin_claims_url}\nClaim status: {claim_url}\n",
     ),
     "verification": (
-        "Upload rehab certification to confirm your claim",
+        "Upload rehab certification to confirm your claim for {center_name}",
         "Hi {name},\n\nWe received your claim for {center_name} (ticket {ticket}).\n\n"
         "Please upload your state license or accreditation certificate here:\n{claim_url}\n\n"
         "Edit rights unlock after verification and subscription.\n",
+    ),
+    "claim_submitted": (
+        "Your claim for {center_name} is pending admin verification",
+        "Hi {name},\n\nWe received your proof for {center_name} (ticket {ticket}).\n\n"
+        "Your claim is already submitted and is waiting for an admin to verify your certification. "
+        "Please wait — you cannot finish claiming the listing until verification is complete.\n\n"
+        "Track your claim status here:\n{claim_url}\n\n"
+        "We will email you again once an admin verifies (or rejects) your claim.\n",
     ),
     "claim_under_review_admin": (
         "Certification uploaded — review claim {ticket}",
@@ -455,6 +468,7 @@ def default_template_context(to_email: str = "preview@example.com", db: Session 
     return {
         "name": "Alex Example",
         "center_name": "Sunrise Recovery Center",
+        "claim_for": " to manage Sunrise Recovery Center",
         "ticket": "SWA-1001",
         "listing_url": f"{settings.public_site_url.rstrip('/')}/rehabs",
         "claim_url": f"{settings.public_site_url.rstrip('/')}/claim-status/SWA-1001",

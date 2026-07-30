@@ -1,0 +1,104 @@
+.ins-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.ins-counts {
+  margin: 0;
+  font-size: var(--fs-caption);
+}
+
+.ins-counts strong {
+  color: var(--fg);
+  font-weight: 650;
+}
+
+.ins-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ins-toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ins-search {
+  margin: 0;
+  flex: 1 1 220px;
+  max-width: 320px;
+}
+
+.ins-search input {
+  margin: 0;
+}
+
+.ins-logo {
+  height: 36px;
+  width: 96px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+  padding: 4px 6px;
+  box-sizing: border-box;
+  display: block;
+}
+
+.ins-logo-fallback {
+  display: inline-grid;
+  place-items: center;
+  height: 36px;
+  width: 96px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+  background: var(--surface-2);
+  color: var(--fg-2);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ins-row-off td {
+  opacity: 0.72;
+}
+
+.ins-empty {
+  margin: 0;
+  padding: 28px 20px;
+}
+
+.ins-empty-state {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  padding: 36px 24px;
+  max-width: 440px;
+}
+
+.ins-empty-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

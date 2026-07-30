@@ -370,15 +370,21 @@ def activate_claimed_providers(db: Session) -> None:
         logger.info("Activated %s claimed/approved provider account(s)", activated)
 
 
-def seed_insurance_catalog(db: Session) -> None:
-    """Idempotent seed of USA insurance options with PNG logos."""
+def seed_insurance_catalog(db: Session) -> dict[str, int]:
+    """Idempotent seed of USA insurance options with PNG logos.
+
+    Returns counts: created, updated, total.
+    """
     existing = {row.slug: row for row in db.query(InsuranceCatalog).all()}
+    created = 0
+    updated = 0
     for name, slug, logo_path, sort_order in USA_INSURANCE_SEED:
         row = existing.get(slug)
         if row:
             row.name = name
             row.logo_path = logo_path
             row.sort_order = sort_order
+            updated += 1
             continue
         db.add(
             InsuranceCatalog(
@@ -389,4 +395,8 @@ def seed_insurance_catalog(db: Session) -> None:
                 sort_order=sort_order,
             )
         )
+        created += 1
     db.commit()
+    total = db.query(InsuranceCatalog).count()
+    logger.info("Insurance catalog seed: created=%s updated=%s total=%s", created, updated, total)
+    return {"created": created, "updated": updated, "total": total}

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { FaMapMarkerAlt, FaPhone, FaEnvelope, FaStar, FaSearch } from 'react-icons/fa'
 import { MdVerified } from 'react-icons/md'
-import { fetchApi, apiEnabled } from '../lib/api'
+import { fetchApi, apiEnabled, getApiBase } from '../lib/api'
 import { centerMatchesService, extractStateFromLocation, normalizeText, specialtyMatchesAnyService } from '../lib/rehabServices'
 import { rehabLandingPath } from '../lib/rehabLanding'
 import RehabSearch from '../components/RehabSearch'
@@ -138,7 +138,7 @@ function ClaimModal({ center, onClose }) {
   const [step, setStep] = useState(1) // 1=account, 2=confirm, 3=cert, 4=status
   const [ticket, setTicket] = useState('')
   const [claimStatus, setClaimStatus] = useState('')
-  const [centerName, setCenterName] = useState('')
+  const [centerName, setCenterName] = useState(center?.name || '')
   const [checkoutReady, setCheckoutReady] = useState(false)
   const [error, setError] = useState('')
   const [uploading, setUploading] = useState(false)
@@ -200,9 +200,22 @@ function ClaimModal({ center, onClose }) {
       try {
         const formData = new FormData()
         formData.append('file', file)
-        const r = await fetch(`/api/rehab/claims/${ticket}/cert`, { method: 'POST', body: formData })
-        const res = await r.json().catch(() => ({}))
-        if (!r.ok) throw new Error(res.detail || 'Upload failed')
+        const base = getApiBase()
+        const r = await fetch(`${base}/api/rehab/claims/${encodeURIComponent(ticket)}/cert`, {
+          method: 'POST',
+          body: formData,
+        })
+        const text = await r.text()
+        let res = {}
+        try {
+          res = text ? JSON.parse(text) : {}
+        } catch {
+          res = {}
+        }
+        if (!r.ok) {
+          const detail = res.detail
+          throw new Error(typeof detail === 'string' ? detail : 'Upload failed')
+        }
         setClaimStatus(res.status || 'under_review')
         setCheckoutReady(res.checkout_ready || false)
         setStep(4)
@@ -211,8 +224,8 @@ function ClaimModal({ center, onClose }) {
       }
     } else {
       setTimeout(() => {
-        setClaimStatus('certified')
-        setCheckoutReady(true)
+        setClaimStatus('under_review')
+        setCheckoutReady(false)
         setStep(4)
       }, 800)
     }
@@ -261,10 +274,10 @@ function ClaimModal({ center, onClose }) {
             <div className="modal-header">
               <span className="section-label">Step 2 of 3</span>
               <h3>Confirm Your Facility</h3>
-              <p>You are claiming:</p>
+              <p>Confirm you are claiming <strong>{centerName || center.name}</strong>.</p>
             </div>
             <div style={{ background: '#f9fafb', padding: '1.25rem', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ fontSize: '1.1rem', color: '#1a1a2e', margin: '0 0 0.25rem' }}>{centerName}</h4>
+              <h4 style={{ fontSize: '1.1rem', color: '#1a1a2e', margin: '0 0 0.25rem' }}>{centerName || center.name}</h4>
               <p style={{ fontSize: '0.88rem', color: '#6b7280', margin: 0 }}>{center.location}</p>
             </div>
             <div className="modal-form">
@@ -280,7 +293,7 @@ function ClaimModal({ center, onClose }) {
             <div className="modal-header">
               <span className="section-label">Step 3 of 3</span>
               <h3>Upload Certification</h3>
-              <p>Provide proof you work at this facility (employment verification, business card, license, etc.)</p>
+              <p>Provide proof you work at <strong>{centerName || center.name}</strong> (employment verification, business card, license, etc.)</p>
             </div>
             {error && <p style={{ color: '#8c1126', marginBottom: '0.5rem' }}>{error}</p>}
             <div className="modal-form">
@@ -296,23 +309,36 @@ function ClaimModal({ center, onClose }) {
         {step === 4 && (
           <div className="modal-success">
             <div className="modal-success-icon">✓</div>
-            <h3>Claim Submitted!</h3>
-            <p style={{ marginBottom: '1rem' }}>Ticket: <strong>{ticket}</strong></p>
-            <p style={{ marginBottom: '1.5rem' }}><Link to={`/claim-status/${ticket}`}>Track your claim status →</Link></p>
-
-            {checkoutReady && claimStatus === 'certified' && (
-              <div style={{ background: '#f0f9ff', border: '1px solid #98b8c4', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', textAlign: 'left' }}>
-                <h4 style={{ fontSize: '1rem', margin: '0 0 0.5rem', color: '#1a1a2e' }}>🎉 Your certification is approved!</h4>
-                <p style={{ fontSize: '0.9rem', color: '#4b5563', marginBottom: '1rem' }}>Subscribe now to publish your listing and start receiving leads.</p>
-                <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column' }}>
-                  <button type="button" className="btn" onClick={() => goToCheckout('year')} style={{ fontSize: '0.9rem' }}>
-                    <strong>$99/year</strong> <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', opacity: 0.85 }}>(Save 2 months!)</span>
-                  </button>
-                  <button type="button" className="btn" onClick={() => goToCheckout('month')} style={{ background: 'white', color: '#1a1a2e', border: '2px solid #e5e7eb', fontSize: '0.9rem' }}>
-                    $9.99/month
-                  </button>
+            {checkoutReady && claimStatus === 'certified' ? (
+              <>
+                <h3>Verified!</h3>
+                <p style={{ marginBottom: '0.75rem' }}>Your claim for <strong>{centerName || center.name}</strong> has been verified.</p>
+                <p style={{ marginBottom: '1rem' }}>Ticket: <strong>{ticket}</strong></p>
+                <div style={{ background: '#f0f9ff', border: '1px solid #98b8c4', borderRadius: '8px', padding: '1.5rem', marginBottom: '1.5rem', textAlign: 'left' }}>
+                  <h4 style={{ fontSize: '1rem', margin: '0 0 0.5rem', color: '#1a1a2e' }}>Subscribe to claim {centerName || center.name}</h4>
+                  <p style={{ fontSize: '0.9rem', color: '#4b5563', marginBottom: '1rem' }}>Subscribe now to publish your listing and start receiving leads.</p>
+                  <div style={{ display: 'flex', gap: '0.75rem', flexDirection: 'column' }}>
+                    <button type="button" className="btn" onClick={() => goToCheckout('year')} style={{ fontSize: '0.9rem' }}>
+                      <strong>$99/year</strong> <span style={{ fontSize: '0.8rem', marginLeft: '0.5rem', opacity: 0.85 }}>(Save 2 months!)</span>
+                    </button>
+                    <button type="button" className="btn" onClick={() => goToCheckout('month')} style={{ background: 'white', color: '#1a1a2e', border: '2px solid #e5e7eb', fontSize: '0.9rem' }}>
+                      $9.99/month
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </>
+            ) : (
+              <>
+                <h3>Proof Received — Pending Verification</h3>
+                <p style={{ marginBottom: '0.75rem' }}>
+                  Your claim for <strong>{centerName || center.name}</strong> is already submitted and waiting for an admin to verify your proof.
+                </p>
+                <p style={{ marginBottom: '0.75rem', color: '#4b5563', fontSize: '0.95rem' }}>
+                  Please wait until an admin verifies your certification. We sent a confirmation email to <strong>{form.work_email}</strong>, and you will get another email when verification is complete.
+                </p>
+                <p style={{ marginBottom: '1rem' }}>Ticket: <strong>{ticket}</strong></p>
+                <p style={{ marginBottom: '1.5rem' }}><Link to={`/claim-status/${ticket}`}>Track your claim status →</Link></p>
+              </>
             )}
 
             <button className="btn" style={{ background: '#e5e7eb', color: '#374151' }} onClick={onClose}>Close</button>

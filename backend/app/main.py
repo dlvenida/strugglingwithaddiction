@@ -29,17 +29,25 @@ logger = logging.getLogger("swa")
 def _run_startup_tasks() -> None:
     Base.metadata.create_all(bind=engine)
     run_migrations(engine)
-    db = SessionLocal()
-    try:
-        bootstrap_admin(db)
-        bootstrap_plans(db)
-        seed_rehab_centers(db)
-        seed_insurance_catalog(db)
-        import_blog_if_empty(db)
-        import_users_if_missing(db)
-        activate_claimed_providers(db)
-    finally:
-        db.close()
+    # Run each seed independently so one failure cannot skip the insurance catalog
+    # (empty catalog breaks provider pickers and public search filters).
+    tasks = (
+        ("bootstrap_admin", bootstrap_admin),
+        ("bootstrap_plans", bootstrap_plans),
+        ("seed_rehab_centers", seed_rehab_centers),
+        ("seed_insurance_catalog", seed_insurance_catalog),
+        ("import_blog_if_empty", import_blog_if_empty),
+        ("import_users_if_missing", import_users_if_missing),
+        ("activate_claimed_providers", activate_claimed_providers),
+    )
+    for name, fn in tasks:
+        db = SessionLocal()
+        try:
+            fn(db)
+        except Exception:
+            logger.exception("Startup task failed: %s", name)
+        finally:
+            db.close()
 
 
 def _startup_worker() -> None:

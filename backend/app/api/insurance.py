@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from app.bootstrap import seed_insurance_catalog
 from app.core.deps import AdminUser
 from app.database import get_db
 from app.models.insurance import InsuranceCatalog
@@ -106,3 +107,15 @@ def bulk_toggle_insurances(
     updated = q.update({InsuranceCatalog.enabled: bool(enabled)}, synchronize_session=False)
     db.commit()
     return {"updated": updated, "enabled": bool(enabled)}
+
+
+class InsuranceSeedResult(BaseModel):
+    created: int
+    updated: int
+    total: int
+
+
+@router.post("/api/admin/insurances/seed", response_model=InsuranceSeedResult)
+def reseed_insurances(_: AdminUser, db: Annotated[Session, Depends(get_db)]):
+    """Insert missing USA catalog rows and refresh name/logo/sort for existing slugs."""
+    return seed_insurance_catalog(db)
