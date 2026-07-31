@@ -49,6 +49,19 @@ export function buildRehabDirectoryUrl({ state, service, insurance } = {}) {
   return query ? `/rehab-centers?${query}` : '/rehab-centers'
 }
 
+/** Expand common care abbreviations for public-facing labels. */
+export function formatCareLabel(label) {
+  if (!label) return label
+  let text = String(label)
+  if (!/partial hospitalization/i.test(text)) {
+    text = text.replace(/\bPHP\b/g, 'PHP (Partial Hospitalization)')
+  }
+  if (!/intensive outpatient/i.test(text)) {
+    text = text.replace(/\bIOP\b/g, 'IOP (Intensive Outpatient)')
+  }
+  return text
+}
+
 export function normalizeText(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
 }
