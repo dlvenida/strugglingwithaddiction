@@ -6,6 +6,7 @@ import { apiEnabled, fetchApi } from '../lib/api'
 import { analyticsSessionKey, detectDevice, guessVisitorState } from '../lib/analytics'
 import { STATIC_CENTERS } from './RehabCenters'
 import { rehabLandingPath } from '../lib/rehabLanding'
+import { formatCareLabel } from '../lib/rehabServices'
 import ReviewsCarousel from '../components/ReviewsCarousel'
 import './RehabCenterDetail.css'
 
@@ -101,7 +102,7 @@ function ChipList({ items }) {
   if (!items?.length) return null
   return (
     <ul className="rpd-chips">
-      {items.map(item => <li key={item}>{item}</li>)}
+      {items.map(item => <li key={item}>{formatCareLabel(item)}</li>)}
     </ul>
   )
 }
